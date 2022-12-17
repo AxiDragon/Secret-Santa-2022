@@ -1,21 +1,24 @@
 ﻿using UnityEditor;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace FIMSpace.FEditor
 {
     [CustomPropertyDrawer(typeof(FPD_FoldableAttribute))]
     public class FPD_Foldable : PropertyDrawer
     {
-        FPD_FoldableAttribute Attribute { get { return ((FPD_FoldableAttribute)base.attribute); } }
-        private SerializedProperty foldProp = null;
+        private SerializedProperty foldProp;
+        private FPD_FoldableAttribute Attribute => (FPD_FoldableAttribute)attribute;
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
-            if (string.IsNullOrEmpty(Attribute.FoldVariable) == false) if ( foldProp == null ) foldProp = property.serializedObject.FindProperty(Attribute.FoldVariable);
+            if (string.IsNullOrEmpty(Attribute.FoldVariable) == false)
+                if (foldProp == null)
+                    foldProp = property.serializedObject.FindProperty(Attribute.FoldVariable);
 
             if (foldProp == null)
+            {
                 EditorGUI.PropertyField(position, property, label);
+            }
             else
             {
                 if (foldProp.boolValue)
@@ -25,22 +28,15 @@ namespace FIMSpace.FEditor
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
-            if (string.IsNullOrEmpty(Attribute.FoldVariable) == false) if (foldProp == null) foldProp = property.serializedObject.FindProperty(Attribute.FoldVariable);
+            if (string.IsNullOrEmpty(Attribute.FoldVariable) == false)
+                if (foldProp == null)
+                    foldProp = property.serializedObject.FindProperty(Attribute.FoldVariable);
 
-            if (foldProp == null)
+            if (foldProp == null) return base.GetPropertyHeight(property, label);
+
+            if (foldProp.boolValue)
                 return base.GetPropertyHeight(property, label);
-            else
-            {
-                if (foldProp.boolValue)
-                    return base.GetPropertyHeight(property, label);
-                else
-                    return 0;
-
-            }
+            return 0;
         }
-
     }
-
-
 }
-

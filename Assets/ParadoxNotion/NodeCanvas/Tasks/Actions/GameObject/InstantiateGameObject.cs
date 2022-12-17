@@ -7,23 +7,23 @@ namespace NodeCanvas.Tasks.Actions
     [Category("GameObject")]
     public class InstantiateGameObject : ActionTask<Transform>
     {
-        public BBParameter<Transform> parent;
         public BBParameter<Vector3> clonePosition;
         public BBParameter<Vector3> cloneRotation;
-        [BlackboardOnly]
-        public BBParameter<GameObject> saveCloneAs;
+        public BBParameter<Transform> parent;
 
-        protected override string info {
-            get { return "Instantiate " + agentInfo + " under " + ( parent.value ? parent.ToString() : "World" ) + " at " + clonePosition + " as " + saveCloneAs; }
-        }
+        [BlackboardOnly] public BBParameter<GameObject> saveCloneAs;
 
-        protected override void OnExecute() {
+        protected override string info => "Instantiate " + agentInfo + " under " +
+                                          (parent.value ? parent.ToString() : "World") + " at " + clonePosition +
+                                          " as " + saveCloneAs;
+
+        protected override void OnExecute()
+        {
 #if UNITY_5_4_OR_NEWER
 
-            var clone = (GameObject)Object.Instantiate(agent.gameObject, parent.value, false);
+            var clone = Object.Instantiate(agent.gameObject, parent.value, false);
 
 #else
-
             var clone = (GameObject)Object.Instantiate(agent.gameObject);
             clone.transform.SetParent(parent.value);
 

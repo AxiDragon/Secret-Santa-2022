@@ -4,14 +4,24 @@ namespace FIMSpace.BonesStimulation
 {
     public partial class BonesStimulator
     {
+        /// <summary> Blending amount of all Bones Stimulator features to use in custom fade out / fade in methods </summary>
+        private readonly float CustomBlendAmount = 1f;
+
         private float delta = 0.01f;
 
-        private bool updateStimulator = true;
-
-        /// <summary> Internal effect weight control for smoothly fade out bones stimulator effect when object is far away from the camera </summary>
+        /// <summary>
+        ///     Internal effect weight control for smoothly fade out bones stimulator effect when object is far away from the
+        ///     camera
+        /// </summary>
         private float fadeOutBlend = 1f;
-        /// <summary> Blending amount of all Bones Stimulator features to use in custom fade out / fade in methods </summary>
-        private float CustomBlendAmount = 1f;
+
+        private Vector3 influenceOffset = Vector3.zero;
+
+
+        // Motion Influence -------------
+        private Vector3 previousPosition;
+
+        private bool updateStimulator = true;
         public float CurrentFadeDistance { get; private set; }
         public Transform ArtificialHelper { get; private set; }
         public Bone ArtificialHelpBone { get; private set; }
@@ -19,37 +29,39 @@ namespace FIMSpace.BonesStimulation
 
         public void Initialize()
         {
-            if (Bones.Count == 0) Bones.Add(new Bone() { transform = transform });
+            if (Bones.Count == 0) Bones.Add(new Bone { transform = transform });
 
-            for (int i = Bones.Count - 1; i >= 0; i--) if (Bones[i] == null || Bones[i].transform == null) Bones.RemoveAt(i);
+            for (var i = Bones.Count - 1; i >= 0; i--)
+                if (Bones[i] == null || Bones[i].transform == null)
+                    Bones.RemoveAt(i);
 
             //if (MovementMuscles > 0f || RotationSpaceMuscles > 0f)
             {
                 // Helper last bone generating
-                Transform lastBn = Bones[Bones.Count - 1].transform;
+                var lastBn = Bones[Bones.Count - 1].transform;
                 ArtificialHelper = new GameObject(Bones[Bones.Count - 1].transform.name + "-Helper").transform;
                 ArtificialHelper.SetParent(lastBn);
                 ArtificialHelper.rotation = lastBn.rotation;
                 ArtificialHelper.position = lastBn.TransformPoint(HelperOffset);
-                ArtificialHelpBone = new Bone() { transform = ArtificialHelper };
+                ArtificialHelpBone = new Bone { transform = ArtificialHelper };
                 Bones.Add(ArtificialHelpBone);
             }
 
             // Initializing features
-            for (int i = 0; i < Bones.Count; i++)
+            for (var i = 0; i < Bones.Count; i++)
             {
                 Bones[i].UpdateInitialCoords();
                 Bones[i].InitMuscles();
                 Bones[i].VibrateInitialize();
 
                 if (Bones.Count > 1)
-                    Bones[i].Evaluation = (float)i / (float)(Bones.Count - 1);
+                    Bones[i].Evaluation = i / (float)(Bones.Count - 1);
                 else
                     Bones[i].Evaluation = 1f;
             }
 
             // Setting relation
-            for (int i = 0; i < Bones.Count; i++)
+            for (var i = 0; i < Bones.Count; i++)
             {
                 if (i < Bones.Count - 1)
                     Bones[i].SetChild(Bones[i + 1]);
@@ -70,7 +82,7 @@ namespace FIMSpace.BonesStimulation
             // Check distance blend
             if (FadeOutDistance > 0f)
             {
-                Transform from = GetDistanceMeasureTransform();
+                var from = GetDistanceMeasureTransform();
                 if (from != null)
                 {
                     CurrentFadeDistance = Vector3.Distance(transform.position, from.transform.position);
@@ -98,7 +110,8 @@ namespace FIMSpace.BonesStimulation
             }
 
             // Check mesh visibility
-            if (HideWith != null) if (HideWith.isVisible == false)
+            if (HideWith != null)
+                if (HideWith.isVisible == false)
                 {
                     updateStimulator = false;
                     return;
@@ -110,8 +123,10 @@ namespace FIMSpace.BonesStimulation
 
         public Transform GetDistanceMeasureTransform()
         {
-            Transform from = DistanceFrom;
-            if (from == null) if (Camera.main != null) from = Camera.main.transform;
+            var from = DistanceFrom;
+            if (from == null)
+                if (Camera.main != null)
+                    from = Camera.main.transform;
             return from;
         }
 
@@ -123,51 +138,52 @@ namespace FIMSpace.BonesStimulation
                 ArtificialHelpBone.transform.localRotation = ArtificialHelpBone.initLocalRot;
             }
 
-            Bone b = Bones[0];
+            var b = Bones[0];
             if (MovementMuscles <= 0f && RotationSpaceMuscles <= 0f)
             {
                 if (VibrateScale != 0f || SqueezingAmount != 0f)
-                {
-                    while (b != null) { b.PreCalibrateWithScale(); b = b.Child; }
-                }
+                    while (b != null)
+                    {
+                        b.PreCalibrateWithScale();
+                        b = b.Child;
+                    }
                 else
-                {
-                    while (b != null) { b.PreCalibrate(); b = b.Child; }
-                }
+                    while (b != null)
+                    {
+                        b.PreCalibrate();
+                        b = b.Child;
+                    }
             }
             else
             {
                 if (VibrateScale != 0f || SqueezingAmount != 0f)
-                {
                     while (b != null)
                     {
                         b.PreCalibrateWithScale();
                         UpdateMuscleSettings(b);
                         b = b.Child;
                     }
-                }
                 else
-                {
                     while (b != null)
                     {
                         b.PreCalibrate();
                         UpdateMuscleSettings(b);
                         b = b.Child;
                     }
-                }
             }
         }
 
 
         public void BeginUpdate()
         {
-            if (UnscaledDelta) delta = Time.unscaledDeltaTime; else delta = Time.deltaTime;
+            if (UnscaledDelta) delta = Time.unscaledDeltaTime;
+            else delta = Time.deltaTime;
 
             Motion_MotionInfluence();
 
             if (MovementMuscles > 0f)
             {
-                Bone b = Bones[0];
+                var b = Bones[0];
                 while (b != null)
                 {
                     b.CaptureAnimation();
@@ -216,7 +232,8 @@ namespace FIMSpace.BonesStimulation
         public Vector3 GetEndTipWorldOffset()
         {
             Transform firstTr;
-            if (Bones.Count == 0) firstTr = transform; else firstTr = Bones[0].transform;
+            if (Bones.Count == 0) firstTr = transform;
+            else firstTr = Bones[0].transform;
 
             if (firstTr.parent)
                 if (Bones.Count > 0)
@@ -231,11 +248,6 @@ namespace FIMSpace.BonesStimulation
             if (Bones[0].transform == null) return transform;
             return Bones[Bones.Count - 1].transform;
         }
-
-
-        // Motion Influence -------------
-        private Vector3 previousPosition;
-        private Vector3 influenceOffset = Vector3.zero;
 
         private void Motion_MotionInfluence()
         {

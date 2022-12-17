@@ -6,10 +6,9 @@ namespace ScriptableObjectArchitecture.Examples
     {
         public FloatReference Health;
 
-        [SerializeField]
-        private bool _resetOnStartup = true;
-        [SerializeField]
-        private FloatReference _startingHealth = default(FloatReference);
+        [SerializeField] private bool _resetOnStartup = true;
+
+        [SerializeField] private FloatReference _startingHealth = default;
 
         private void Start()
         {

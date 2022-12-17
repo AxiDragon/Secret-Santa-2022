@@ -1,9 +1,16 @@
-﻿namespace ScriptableObjectArchitecture
+﻿using System;
+
+namespace ScriptableObjectArchitecture
 {
-    [System.Serializable]
+    [Serializable]
     public sealed class BoolReference : BaseReference<bool, BoolVariable>
     {
-        public BoolReference() : base() { }
-        public BoolReference(bool value) : base(value) { }
-    } 
+        public BoolReference()
+        {
+        }
+
+        public BoolReference(bool value) : base(value)
+        {
+        }
+    }
 }

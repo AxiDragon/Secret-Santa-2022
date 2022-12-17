@@ -1,11 +1,17 @@
+using System;
 using UnityEngine;
 
 namespace ScriptableObjectArchitecture
 {
-    [System.Serializable]
+    [Serializable]
     public sealed class QuaternionReference : BaseReference<Quaternion, QuaternionVariable>
     {
-        public QuaternionReference() : base() { }
-        public QuaternionReference(Quaternion value) : base(value) { }
-    } 
+        public QuaternionReference()
+        {
+        }
+
+        public QuaternionReference(Quaternion value) : base(value)
+        {
+        }
+    }
 }

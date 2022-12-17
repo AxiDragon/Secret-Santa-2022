@@ -4,33 +4,35 @@ using UnityEngine;
 namespace FIMSpace.Basics
 {
     /// <summary>
-    /// FM: Basic class for holding animation clips as hashes inside dictionary and with some other handy methods
-    /// Add your animation clips with fAnimationClip.AddClip(animator, Idle) then use it by fAnimationClip["Idle"]
+    ///     FM: Basic class for holding animation clips as hashes inside dictionary and with some other handy methods
+    ///     Add your animation clips with fAnimationClip.AddClip(animator, Idle) then use it by fAnimationClip["Idle"]
     /// </summary>
     public class FAnimationClips : Dictionary<string, int>
     {
         /// <summary> Reference to Unity's Animator component </summary>
         public readonly Animator Animator;
 
-        /// <summary> Lastest crossfaded from code animation clip name </summary>
-        public string CurrentAnimation { get; private set; }
-        /// <summary> Previously crossfaded from code animation clip name </summary>
-        public string PreviousAnimation { get; private set; }
-
         public int Layer = 0;
 
         /// <summary>
-        /// ADD ANIMATION CLIPS USING - AddClip() - method !!!
+        ///     ADD ANIMATION CLIPS USING - AddClip() - method !!!
         /// </summary>
         public FAnimationClips(Animator animator)
         {
-            this.Animator = animator;
+            Animator = animator;
             CurrentAnimation = "";
             PreviousAnimation = "";
         }
 
+        /// <summary> Lastest crossfaded from code animation clip name </summary>
+        public string CurrentAnimation { get; private set; }
+
+        /// <summary> Previously crossfaded from code animation clip name </summary>
+        public string PreviousAnimation { get; private set; }
+
         /// <summary>
-        /// Checking if inside animator clipName state exist and with 'exactClipName' false it will check all variants of clipName, uppercase / lowercase etc.
+        ///     Checking if inside animator clipName state exist and with 'exactClipName' false it will check all variants of
+        ///     clipName, uppercase / lowercase etc.
         /// </summary>
         public void Add(string clipName, bool exactClipName = false)
         {
@@ -38,7 +40,8 @@ namespace FIMSpace.Basics
         }
 
         /// <summary>
-        /// Checking if inside animator clipName state exist and with 'exactClipName' false it will check all variants of clipName, uppercase / lowercase etc.
+        ///     Checking if inside animator clipName state exist and with 'exactClipName' false it will check all variants of
+        ///     clipName, uppercase / lowercase etc.
         /// </summary>
         public void AddClip(string clipName, bool exactClipName = false)
         {
@@ -46,7 +49,8 @@ namespace FIMSpace.Basics
         }
 
         /// <summary>
-        /// Checking if inside animator clipName state exist and with 'exactClipName' false it will check all variants of clipName, uppercase / lowercase etc.
+        ///     Checking if inside animator clipName state exist and with 'exactClipName' false it will check all variants of
+        ///     clipName, uppercase / lowercase etc.
         /// </summary>
         public void AddClip(Animator animator, string clipName, bool exactClipName = false)
         {
@@ -56,26 +60,25 @@ namespace FIMSpace.Basics
                 return;
             }
 
-            string existing = "";
+            var existing = "";
 
             if (!exactClipName) // Checking if animation state exists with different variants for clipName word
             {
-                if (FAnimatorMethods.StateExists(animator, clipName, Layer)) existing = clipName;
-                else
-                    if (FAnimatorMethods.StateExists(animator, FStringMethods.CapitalizeFirstLetter(clipName))) existing = FStringMethods.CapitalizeFirstLetter(clipName);
-                else
-                    if (FAnimatorMethods.StateExists(animator, clipName.ToLower(), Layer)) existing = clipName.ToLower();
-                else
-                    if (FAnimatorMethods.StateExists(animator, clipName.ToUpper(), Layer)) existing = clipName.ToUpper();
+                if (animator.StateExists(clipName, Layer)) existing = clipName;
+                else if (animator.StateExists(clipName.CapitalizeFirstLetter()))
+                    existing = clipName.CapitalizeFirstLetter();
+                else if (animator.StateExists(clipName.ToLower(), Layer)) existing = clipName.ToLower();
+                else if (animator.StateExists(clipName.ToUpper(), Layer)) existing = clipName.ToUpper();
             }
             else // Checking if state with provided exact name exists inside animator
             {
-                if (FAnimatorMethods.StateExists(animator, clipName, Layer)) existing = clipName;
+                if (animator.StateExists(clipName, Layer)) existing = clipName;
             }
 
             if (existing == "")
             {
-                Debug.LogWarning("Clip with name " + clipName + " not exists in animator from game object " + animator.gameObject.name);
+                Debug.LogWarning("Clip with name " + clipName + " not exists in animator from game object " +
+                                 animator.gameObject.name);
             }
             else // Adding clip hash to dictionary if it exists inside animator
             {
@@ -85,41 +88,40 @@ namespace FIMSpace.Basics
         }
 
         /// <summary>
-        /// Transitioning to choosed animation by dictionary
+        ///     Transitioning to choosed animation by dictionary
         /// </summary>
-        public void CrossFadeInFixedTime(string clip, float transitionTime = 0.25f, float timeOffset = 0f, bool startOver = false)
+        public void CrossFadeInFixedTime(string clip, float transitionTime = 0.25f, float timeOffset = 0f,
+            bool startOver = false)
         {
-            if (this.ContainsKey(clip))
+            if (ContainsKey(clip))
             {
                 RefreshClipMemory(clip);
 
                 if (startOver)
                     Animator.CrossFadeInFixedTime(this[clip], transitionTime, Layer, timeOffset);
-                else
-                    if (!IsPlaying(clip))
+                else if (!IsPlaying(clip))
                     Animator.CrossFadeInFixedTime(this[clip], transitionTime, Layer, timeOffset);
             }
         }
 
         /// <summary>
-        /// Transitioning to choosed animation by dictionary
+        ///     Transitioning to choosed animation by dictionary
         /// </summary>
         public void CrossFade(string clip, float transitionTime = 0.25f, float timeOffset = 0f, bool startOver = false)
         {
-            if (this.ContainsKey(clip))
+            if (ContainsKey(clip))
             {
                 RefreshClipMemory(clip);
 
                 if (startOver)
                     Animator.CrossFade(this[clip], transitionTime, Layer, timeOffset);
-                else
-                    if (!IsPlaying(clip))
+                else if (!IsPlaying(clip))
                     Animator.CrossFade(this[clip], transitionTime, Layer, timeOffset);
             }
         }
 
         /// <summary>
-        /// Storing lately and currently played clip in variables
+        ///     Storing lately and currently played clip in variables
         /// </summary>
         private void RefreshClipMemory(string name)
         {
@@ -131,27 +133,29 @@ namespace FIMSpace.Basics
         }
 
         /// <summary>
-        /// Changing float parameter value smoothly (when speed value about 10, 60 is instant)
+        ///     Changing float parameter value smoothly (when speed value about 10, 60 is instant)
         /// </summary>
         public void SetFloat(string parameter, float value = 0f, float deltaSpeed = 60f)
         {
-            float newValue = Animator.GetFloat(parameter);
-            if (deltaSpeed >= 60f) newValue = value; else newValue = FLogicMethods.FLerp(newValue, value, Time.deltaTime * deltaSpeed);
+            var newValue = Animator.GetFloat(parameter);
+            if (deltaSpeed >= 60f) newValue = value;
+            else newValue = FLogicMethods.FLerp(newValue, value, Time.deltaTime * deltaSpeed);
             Animator.SetFloat(parameter, newValue);
         }
 
         /// <summary>
-        /// Changing float parameter value smoothly (when speed value about 10, 60 is instant)
+        ///     Changing float parameter value smoothly (when speed value about 10, 60 is instant)
         /// </summary>
         public void SetFloatUnscaledDelta(string parameter, float value = 0f, float deltaSpeed = 60f)
         {
-            float newValue = Animator.GetFloat(parameter);
-            if (deltaSpeed >= 60f) newValue = value; else newValue = FLogicMethods.FLerp(newValue, value, Time.unscaledDeltaTime * deltaSpeed);
+            var newValue = Animator.GetFloat(parameter);
+            if (deltaSpeed >= 60f) newValue = value;
+            else newValue = FLogicMethods.FLerp(newValue, value, Time.unscaledDeltaTime * deltaSpeed);
             Animator.SetFloat(parameter, newValue);
         }
 
         /// <summary>
-        /// If animator is truly playing clip with given string id (added by you using clips.AddClip(name) )
+        ///     If animator is truly playing clip with given string id (added by you using clips.AddClip(name) )
         /// </summary>
         internal bool IsPlaying(string clip)
         {
@@ -177,27 +181,29 @@ namespace FIMSpace.Basics
         /// <summary> Reference to Unity's Animator component </summary>
         public readonly Animator Animator;
 
-        /// <summary> Lastest crossfaded from code animation clip name </summary>
-        public string CurrentAnimation { get; private set; }
-        /// <summary> Previously crossfaded from code animation clip name </summary>
-        public string PreviousAnimation { get; private set; }
-
-        public int Layer { get; private set; }
-
         /// <summary>
-        /// ADD ANIMATION CLIPS USING - AddClip() - method !!!
+        ///     ADD ANIMATION CLIPS USING - AddClip() - method !!!
         /// </summary>
         public FAnimator(Animator animator, int layer = 0)
         {
-            this.Animator = animator;
+            Animator = animator;
             CurrentAnimation = "";
             PreviousAnimation = "";
             Layer = layer;
         }
 
+        /// <summary> Lastest crossfaded from code animation clip name </summary>
+        public string CurrentAnimation { get; private set; }
+
+        /// <summary> Previously crossfaded from code animation clip name </summary>
+        public string PreviousAnimation { get; private set; }
+
+        public int Layer { get; }
+
 
         /// <summary>
-        /// Checking if inside animator clipName state exist and with 'exactClipName' false it will check all variants of clipName, uppercase / lowercase etc.
+        ///     Checking if inside animator clipName state exist and with 'exactClipName' false it will check all variants of
+        ///     clipName, uppercase / lowercase etc.
         /// </summary>
         public bool ContainsClip(string clipName, bool exactClipName = false)
         {
@@ -207,48 +213,47 @@ namespace FIMSpace.Basics
                 return false;
             }
 
-            string existing = "";
+            var existing = "";
 
             if (!exactClipName) // Checking if animation state exists with different variants for clipName word
             {
-                if (FAnimatorMethods.StateExists(Animator, clipName, Layer)) existing = clipName;
-                else
-                    if (FAnimatorMethods.StateExists(Animator, FStringMethods.CapitalizeFirstLetter(clipName))) existing = FStringMethods.CapitalizeFirstLetter(clipName);
-                else
-                    if (FAnimatorMethods.StateExists(Animator, clipName.ToLower(), Layer)) existing = clipName.ToLower();
-                else
-                    if (FAnimatorMethods.StateExists(Animator, clipName.ToUpper(), Layer)) existing = clipName.ToUpper();
+                if (Animator.StateExists(clipName, Layer)) existing = clipName;
+                else if (Animator.StateExists(clipName.CapitalizeFirstLetter()))
+                    existing = clipName.CapitalizeFirstLetter();
+                else if (Animator.StateExists(clipName.ToLower(), Layer)) existing = clipName.ToLower();
+                else if (Animator.StateExists(clipName.ToUpper(), Layer)) existing = clipName.ToUpper();
             }
             else // Checking if state with provided exact name exists inside animator
             {
-                if (FAnimatorMethods.StateExists(Animator, clipName, Layer)) existing = clipName;
+                if (Animator.StateExists(clipName, Layer)) existing = clipName;
             }
 
             if (existing == "")
             {
-                Debug.LogWarning("Clip with name " + clipName + " not exists in animator from game object " + Animator.gameObject.name);
+                Debug.LogWarning("Clip with name " + clipName + " not exists in animator from game object " +
+                                 Animator.gameObject.name);
                 return false;
             }
-            else
-                return true;
+
+            return true;
         }
 
         /// <summary>
-        /// Transitioning to choosed animation by dictionary
+        ///     Transitioning to choosed animation by dictionary
         /// </summary>
-        public void CrossFadeInFixedTime(string clip, float transitionTime = 0.25f, float timeOffset = 0f, bool startOver = false)
+        public void CrossFadeInFixedTime(string clip, float transitionTime = 0.25f, float timeOffset = 0f,
+            bool startOver = false)
         {
             RefreshClipMemory(clip);
 
             if (startOver)
                 Animator.CrossFadeInFixedTime(clip, transitionTime, Layer, timeOffset);
-            else
-                if (!IsPlaying(clip))
+            else if (!IsPlaying(clip))
                 Animator.CrossFadeInFixedTime(clip, transitionTime, Layer, timeOffset);
         }
 
         /// <summary>
-        /// Transitioning to choosed animation by dictionary
+        ///     Transitioning to choosed animation by dictionary
         /// </summary>
         public void CrossFade(string clip, float transitionTime = 0.25f, float timeOffset = 0f, bool startOver = false)
         {
@@ -256,13 +261,12 @@ namespace FIMSpace.Basics
 
             if (startOver)
                 Animator.CrossFade(clip, transitionTime, Layer, timeOffset);
-            else
-                if (!IsPlaying(clip))
+            else if (!IsPlaying(clip))
                 Animator.CrossFade(clip, transitionTime, Layer, timeOffset);
         }
 
         /// <summary>
-        /// Storing lately and currently played clip in variables
+        ///     Storing lately and currently played clip in variables
         /// </summary>
         private void RefreshClipMemory(string name)
         {
@@ -274,27 +278,29 @@ namespace FIMSpace.Basics
         }
 
         /// <summary>
-        /// Changing float parameter value smoothly (when speed value about 10, 60 is instant)
+        ///     Changing float parameter value smoothly (when speed value about 10, 60 is instant)
         /// </summary>
         public void SetFloat(string parameter, float value = 0f, float deltaSpeed = 60f)
         {
-            float newValue = Animator.GetFloat(parameter);
-            if (deltaSpeed >= 60f) newValue = value; else newValue = FLogicMethods.FLerp(newValue, value, Time.deltaTime * deltaSpeed);
+            var newValue = Animator.GetFloat(parameter);
+            if (deltaSpeed >= 60f) newValue = value;
+            else newValue = FLogicMethods.FLerp(newValue, value, Time.deltaTime * deltaSpeed);
             Animator.SetFloat(parameter, newValue);
         }
 
         /// <summary>
-        /// Changing float parameter value smoothly (when speed value about 10, 60 is instant)
+        ///     Changing float parameter value smoothly (when speed value about 10, 60 is instant)
         /// </summary>
         public void SetFloatUnscaledDelta(string parameter, float value = 0f, float deltaSpeed = 60f)
         {
-            float newValue = Animator.GetFloat(parameter);
-            if (deltaSpeed >= 60f) newValue = value; else newValue = FLogicMethods.FLerp(newValue, value, Time.unscaledDeltaTime * deltaSpeed);
+            var newValue = Animator.GetFloat(parameter);
+            if (deltaSpeed >= 60f) newValue = value;
+            else newValue = FLogicMethods.FLerp(newValue, value, Time.unscaledDeltaTime * deltaSpeed);
             Animator.SetFloat(parameter, newValue);
         }
 
         /// <summary>
-        /// If animator is truly playing clip with given string id (added by you using clips.AddClip(name) )
+        ///     If animator is truly playing clip with given string id (added by you using clips.AddClip(name) )
         /// </summary>
         internal bool IsPlaying(string clip)
         {
@@ -302,7 +308,7 @@ namespace FIMSpace.Basics
             if (Animator.IsInTransition(Layer))
             {
                 info = Animator.GetNextAnimatorStateInfo(Layer);
-                if (info.shortNameHash == Animator.StringToHash(clip) ) return true;
+                if (info.shortNameHash == Animator.StringToHash(clip)) return true;
             }
             else
             {

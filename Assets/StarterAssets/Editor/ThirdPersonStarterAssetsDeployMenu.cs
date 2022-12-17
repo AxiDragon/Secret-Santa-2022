@@ -13,10 +13,10 @@ namespace StarterAssets
 
 #if STARTER_ASSETS_PACKAGES_CHECKED
         /// <summary>
-        /// Check the Armature, main camera, cinemachine virtual camera, camera target and references
+        ///     Check the Armature, main camera, cinemachine virtual camera, camera target and references
         /// </summary>
         [MenuItem(MenuRoot + "/Reset Third Person Controller Armature", false)]
-        static void ResetThirdPersonControllerArmature()
+        private static void ResetThirdPersonControllerArmature()
         {
             var thirdPersonControllers = FindObjectsOfType<ThirdPersonController>();
             var player = thirdPersonControllers.FirstOrDefault(controller =>
@@ -27,14 +27,12 @@ namespace StarterAssets
             // player
             if (player == null)
             {
-                if (TryLocatePrefab(PlayerArmaturePrefabName, null, new[] { typeof(ThirdPersonController), typeof(StarterAssetsInputs) }, out GameObject prefab, out string _))
-                {
+                if (TryLocatePrefab(PlayerArmaturePrefabName, null,
+                        new[] { typeof(ThirdPersonController), typeof(StarterAssetsInputs) }, out var prefab,
+                        out var _))
                     HandleInstantiatingPrefab(prefab, out playerGameObject);
-                }
                 else
-                {
                     Debug.LogError("Couldn't find player armature prefab");
-                }
             }
             else
             {
@@ -42,14 +40,12 @@ namespace StarterAssets
             }
 
             if (playerGameObject != null)
-            {
                 // cameras
                 CheckCameras(playerGameObject.transform, GetThirdPersonPrefabPath());
-            }
         }
 
         [MenuItem(MenuRoot + "/Reset Third Person Controller Capsule", false)]
-        static void ResetThirdPersonControllerCapsule()
+        private static void ResetThirdPersonControllerCapsule()
         {
             var thirdPersonControllers = FindObjectsOfType<ThirdPersonController>();
             var player = thirdPersonControllers.FirstOrDefault(controller =>
@@ -60,14 +56,12 @@ namespace StarterAssets
             // player
             if (player == null)
             {
-                if (TryLocatePrefab(PlayerCapsulePrefabName, null, new[] { typeof(ThirdPersonController), typeof(StarterAssetsInputs) }, out GameObject prefab, out string _))
-                {
+                if (TryLocatePrefab(PlayerCapsulePrefabName, null,
+                        new[] { typeof(ThirdPersonController), typeof(StarterAssetsInputs) }, out var prefab,
+                        out var _))
                     HandleInstantiatingPrefab(prefab, out playerGameObject);
-                }
                 else
-                {
                     Debug.LogError("Couldn't find player capsule prefab");
-                }
             }
             else
             {
@@ -75,15 +69,15 @@ namespace StarterAssets
             }
 
             if (playerGameObject != null)
-            {
                 // cameras
                 CheckCameras(playerGameObject.transform, GetThirdPersonPrefabPath());
-            }
         }
 
-        static string GetThirdPersonPrefabPath()
+        private static string GetThirdPersonPrefabPath()
         {
-            if (TryLocatePrefab(PlayerArmaturePrefabName, null, new[] { typeof(ThirdPersonController), typeof(StarterAssetsInputs) }, out GameObject _, out string prefabPath))
+            if (TryLocatePrefab(PlayerArmaturePrefabName, null,
+                    new[] { typeof(ThirdPersonController), typeof(StarterAssetsInputs) }, out var _,
+                    out var prefabPath))
             {
                 var pathString = new StringBuilder();
                 var currentDirectory = new FileInfo(prefabPath).Directory;

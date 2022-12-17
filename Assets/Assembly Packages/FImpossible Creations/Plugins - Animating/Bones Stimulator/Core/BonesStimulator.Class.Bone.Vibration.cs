@@ -1,5 +1,4 @@
-﻿using FIMSpace.FTools;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace FIMSpace.BonesStimulation
 {
@@ -19,15 +18,12 @@ namespace FIMSpace.BonesStimulation
                 randomFloats = new float[6];
                 randomInts = new int[6];
 
-                for (int i = 0; i < randomFloats.Length; i++)
+                for (var i = 0; i < randomFloats.Length; i++)
                 {
                     randomFloats[i] = Random.Range(0.7f, 1.7f);
                     randomInts[i] = Random.Range(0, 3);
                 }
-
-
             }
-
         }
     }
 }

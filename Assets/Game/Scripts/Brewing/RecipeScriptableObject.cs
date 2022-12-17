@@ -1,5 +1,3 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -15,10 +13,7 @@ public class RecipeScriptableObject : ScriptableObject
         if (ingredients.Count > 3)
         {
             Debug.LogWarning("Max of 3 Ingredients");
-            for (int i = ingredients.Count - 1; i >= 3; i--)
-            {
-                ingredients.RemoveAt(i);
-            }
+            for (var i = ingredients.Count - 1; i >= 3; i--) ingredients.RemoveAt(i);
         }
     }
 }

@@ -1,10 +1,14 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using UnityEngine.Events;
+using Object = UnityEngine.Object;
 
 namespace ScriptableObjectArchitecture
 {
-    [System.Serializable]
-    public class ObjectEvent : UnityEvent<Object> {  }
+    [Serializable]
+    public class ObjectEvent : UnityEvent<Object>
+    {
+    }
 
     [CreateAssetMenu(
         fileName = "ObjectVariable.asset",
@@ -12,5 +16,5 @@ namespace ScriptableObjectArchitecture
         order = SOArchitecture_Utility.ASSET_MENU_ORDER_COLLECTIONS + 1)]
     public class ObjectVariable : BaseVariable<Object, ObjectEvent>
     {
-    } 
+    }
 }

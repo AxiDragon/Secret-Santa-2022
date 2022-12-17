@@ -1,15 +1,15 @@
 ﻿using System;
-using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
-using Object = UnityEngine.Object;
 
 namespace ScriptableObjectArchitecture.Editor
 {
     public static class GenericPropertyDrawer
     {
         private const string DefaultErrorLabelText = "Type is not drawable! Please implement property drawer";
-        private const string NullPropertyText = "SerializedProperty is null. Your custom type is probably missing the [Serializable] attribute";
+
+        private const string NullPropertyText =
+            "SerializedProperty is null. Your custom type is probably missing the [Serializable] attribute";
 
         public static void DrawPropertyDrawer(Rect rect, SerializedProperty property, Type type, bool drawLabel = true)
         {
@@ -21,25 +21,22 @@ namespace ScriptableObjectArchitecture.Editor
 
             if (SOArchitecture_EditorUtility.HasPropertyDrawer(type))
             {
-                if(drawLabel)
-                {
+                if (drawLabel)
                     EditorGUI.PropertyField(rect, property);
-                }
                 else
-                {
                     EditorGUI.PropertyField(rect, property, GUIContent.none);
-                }
             }
             else
             {
-                PropertyDrawIterator iter = new PropertyDrawIterator(rect, property.Copy(), drawLabel);
+                var iter = new PropertyDrawIterator(rect, property.Copy(), drawLabel);
 
                 DrawPropertyDrawerInternal(iter);
             }
         }
+
         public static void DrawPropertyDrawerLayout(SerializedProperty property, Type type, bool drawLabel = true)
         {
-            if(property == null)
+            if (property == null)
             {
                 Debug.LogError(NullPropertyText);
                 return;
@@ -48,57 +45,51 @@ namespace ScriptableObjectArchitecture.Editor
             if (SOArchitecture_EditorUtility.HasPropertyDrawer(type))
             {
                 if (drawLabel)
-                {
                     EditorGUILayout.PropertyField(property);
-                }
                 else
-                {
                     EditorGUILayout.PropertyField(property, GUIContent.none);
-                }
             }
             else
             {
-                PropertyDrawIteratorLayout iter = new PropertyDrawIteratorLayout(property.Copy(), drawLabel);
+                var iter = new PropertyDrawIteratorLayout(property.Copy(), drawLabel);
 
                 DrawPropertyDrawerInternal(iter);
             }
         }
+
         private static void DrawPropertyDrawerInternal(IPropertyDrawIterator iter)
         {
             do
             {
                 iter.Draw();
-            }
-            while (iter.Next());
+            } while (iter.Next());
 
             iter.End();
         }
+
         public static float GetHeight(SerializedProperty property, Type type)
         {
             if (SOArchitecture_EditorUtility.HasPropertyDrawer(type))
             {
                 return EditorGUI.GetPropertyHeight(property);
             }
-            else
+
+            property = property.Copy();
+
+            var elements = 0;
+
+            var iter = new PropertyIterator(property);
+            do
             {
-                property = property.Copy();
+                ++elements;
+            } while (iter.Next());
 
-                int elements = 0;
+            iter.End();
 
-                PropertyIterator iter = new PropertyIterator(property);
-                do
-                {
-                    ++elements;
-                }
-                while (iter.Next());
+            var spacing = (elements - 1) * EditorGUIUtility.standardVerticalSpacing;
+            var elementHeights = elements * EditorGUIUtility.singleLineHeight;
 
-                iter.End();
-
-                float spacing = (elements - 1) * EditorGUIUtility.standardVerticalSpacing;
-                float elementHeights = elements * EditorGUIUtility.singleLineHeight;
-
-                return spacing + elementHeights;
-            }
+            return spacing + elementHeights;
         }
     }
 }

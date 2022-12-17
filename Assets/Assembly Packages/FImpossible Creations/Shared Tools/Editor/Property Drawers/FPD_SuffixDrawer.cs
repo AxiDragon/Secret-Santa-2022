@@ -1,5 +1,4 @@
-﻿using System;
-using UnityEditor;
+﻿using UnityEditor;
 using UnityEngine;
 
 namespace FIMSpace.FEditor
@@ -7,28 +6,30 @@ namespace FIMSpace.FEditor
     [CustomPropertyDrawer(typeof(FPD_SuffixAttribute))]
     public class FPD_Suffix : PropertyDrawer
     {
-        FPD_SuffixAttribute Attribute { get { return ((FPD_SuffixAttribute)base.attribute); } }
+        private FPD_SuffixAttribute Attribute => (FPD_SuffixAttribute)attribute;
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
             label = EditorGUI.BeginProperty(position, label, property);
             position = EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), label);
 
-            float sliderVal = property.floatValue;
+            var sliderVal = property.floatValue;
 
-            GUIContent suff = new GUIContent(Attribute.Suffix);
-            Vector2 fieldS = EditorStyles.label.CalcSize(suff);
+            var suff = new GUIContent(Attribute.Suffix);
+            var fieldS = EditorStyles.label.CalcSize(suff);
 
-            float fieldSize = 34 + fieldS.x;
-            var percField = new Rect(position.x + position.width - fieldSize + 5, position.y, fieldSize, position.height);
-            Rect floatField = position;
+            var fieldSize = 34 + fieldS.x;
+            var percField = new Rect(position.x + position.width - fieldSize + 5, position.y, fieldSize,
+                position.height);
+            var floatField = position;
 
-            bool editable = Attribute.editableValue;
+            var editable = Attribute.editableValue;
             if (GUI.enabled == false) editable = false;
 
             if (editable)
             {
-                floatField = new Rect(position.x + position.width - fieldSize + 2, position.y, fieldSize - (fieldS.x + 4), position.height);
+                floatField = new Rect(position.x + position.width - fieldSize + 2, position.y,
+                    fieldSize - (fieldS.x + 4), position.height);
                 percField.position = new Vector2(position.x + position.width - fieldS.x, percField.position.y);
                 percField.width = fieldS.x;
             }
@@ -43,7 +44,10 @@ namespace FIMSpace.FEditor
                 case FPD_SuffixAttribute.SuffixMode.From0to100:
 
                     if (!editable)
-                        EditorGUI.LabelField(percField, Mathf.Round(sliderVal / Attribute.Max * 100f).ToString() + Attribute.Suffix);
+                    {
+                        EditorGUI.LabelField(percField,
+                            Mathf.Round(sliderVal / Attribute.Max * 100f) + Attribute.Suffix);
+                    }
                     else
                     {
                         pre = Mathf.Round(sliderVal / Attribute.Max * 100f);
@@ -58,7 +62,9 @@ namespace FIMSpace.FEditor
                 case FPD_SuffixAttribute.SuffixMode.PercentageUnclamped:
 
                     if (!editable)
-                        EditorGUI.LabelField(percField, Mathf.Round(sliderVal * 100f).ToString() + Attribute.Suffix);
+                    {
+                        EditorGUI.LabelField(percField, Mathf.Round(sliderVal * 100f) + Attribute.Suffix);
+                    }
                     else
                     {
                         pre = Mathf.Round(sliderVal * 100f);
@@ -84,7 +90,7 @@ namespace FIMSpace.FEditor
                 case FPD_SuffixAttribute.SuffixMode.FromMinToMaxRounded:
 
                     pre = Mathf.Round(sliderVal);
-                    value = EditorGUI.FloatField(floatField, Mathf.Round(sliderVal) );
+                    value = EditorGUI.FloatField(floatField, Mathf.Round(sliderVal));
                     if (value != pre) sliderVal = value;
 
                     EditorGUI.LabelField(percField, Attribute.Suffix);
@@ -95,9 +101,6 @@ namespace FIMSpace.FEditor
             property.floatValue = sliderVal;
 
             EditorGUI.EndProperty();
-
         }
     }
-
 }
-

@@ -4,23 +4,23 @@ namespace FIMSpace.FTools
 {
     public class FElasticTransform
     {
-        public Transform transform;
+        private float delta = 0.01f;
 
         private FElasticTransform elChild;
         private FElasticTransform elParent;
+        private Quaternion proceduralRotation;
 
         // Position Muscle -----------
         [FPD_Suffix(0f, 1f)] public float RotationRapidness = 0.1f;
+        public Transform transform;
+
         /// <summary> Bounce effect muscle </summary>
         public FMuscle_Vector3 PositionMuscle { get; private set; }
 
         public Vector3 ProceduralPosition { get; private set; }
-        private Quaternion proceduralRotation;
 
         /// <summary> Used for blending </summary>
         public Vector3 sourceAnimationPosition { get; private set; }
-
-        private float delta = 0.01f;
 
         public void Initialize(Transform transform)
         {
@@ -38,25 +38,41 @@ namespace FIMSpace.FTools
         }
 
         public void OverrideProceduralPosition(Vector3 newPos)
-        { ProceduralPosition = newPos; }
+        {
+            ProceduralPosition = newPos;
+        }
 
         public void OverrideProceduralPositionHard(Vector3 newPos)
-        { ProceduralPosition = newPos; PositionMuscle.OverrideProceduralPosition(newPos); sourceAnimationPosition = newPos; }
+        {
+            ProceduralPosition = newPos;
+            PositionMuscle.OverrideProceduralPosition(newPos);
+            sourceAnimationPosition = newPos;
+        }
 
         public void OverrideProceduralRotation(Quaternion newRot)
-        { proceduralRotation = newRot; }
+        {
+            proceduralRotation = newRot;
+        }
 
         public void CaptureSourceAnimation()
-        { sourceAnimationPosition = transform.position; }
+        {
+            sourceAnimationPosition = transform.position;
+        }
 
         public void SetChild(FElasticTransform child)
-        { elChild = child; }
+        {
+            elChild = child;
+        }
 
         public FElasticTransform GetElasticChild()
-        { return elChild; }
+        {
+            return elChild;
+        }
 
         public void SetParent(FElasticTransform parent)
-        { elParent = parent; }
+        {
+            elParent = parent;
+        }
 
         public void UpdateElasticPosition(float delta)
         {
@@ -64,17 +80,19 @@ namespace FIMSpace.FTools
 
             if (elParent != null)
             {
-                FElasticTransform parent = elParent.transform == null ? elParent.elParent : elParent;
-                Quaternion referenceRotation = parent.transform.rotation;
+                var parent = elParent.transform == null ? elParent.elParent : elParent;
+                var referenceRotation = parent.transform.rotation;
 
                 // Target position for elastic bones
-                Vector3 targetPos = parent.ProceduralPosition + referenceRotation * transform.localPosition;
+                var targetPos = parent.ProceduralPosition + referenceRotation * transform.localPosition;
                 PositionMuscle.Update(delta, targetPos);
 
                 ProceduralPosition = PositionMuscle.ProceduralPosition;
             }
             else
+            {
                 ProceduralPosition = transform.position;
+            }
         }
 
 
@@ -88,10 +106,12 @@ namespace FIMSpace.FTools
                 UpdateElasticPosition(delta);
             }
             else
+            {
                 ProceduralPosition = transform.position;
+            }
         }
 
-        
+
         public void UpdateElasticRotation(float blending)
         {
             if (elChild != null) // We have child - procedural mixed with source animator local pos
@@ -99,17 +119,22 @@ namespace FIMSpace.FTools
                 Quaternion targetRotation;
 
                 if (blending < 1f)
-                    targetRotation = GetTargetRotation(elChild.BlendVector(elChild.ProceduralPosition, blending), transform.TransformDirection(elChild.transform.localPosition), blending);
+                    targetRotation = GetTargetRotation(elChild.BlendVector(elChild.ProceduralPosition, blending),
+                        transform.TransformDirection(elChild.transform.localPosition), blending);
                 else
-                    targetRotation = GetTargetRotation(elChild.ProceduralPosition, transform.TransformDirection(elChild.transform.localPosition), ProceduralPosition);
+                    targetRotation = GetTargetRotation(elChild.ProceduralPosition,
+                        transform.TransformDirection(elChild.transform.localPosition), ProceduralPosition);
 
                 if (RotationRapidness < 1f)
                 {
-                    proceduralRotation = Quaternion.Lerp(proceduralRotation, targetRotation, Mathf.Min(1f, delta * (10f + RotationRapidness * 50f)));
+                    proceduralRotation = Quaternion.Lerp(proceduralRotation, targetRotation,
+                        Mathf.Min(1f, delta * (10f + RotationRapidness * 50f)));
                     transform.rotation = proceduralRotation;
                 }
                 else
+                {
                     transform.rotation = targetRotation;
+                }
             }
         }
 
@@ -121,7 +146,8 @@ namespace FIMSpace.FTools
 
         public Quaternion GetTargetRotation(Vector3 lookPos, Vector3 localOffset, float blending)
         {
-            return Quaternion.FromToRotation(localOffset, (lookPos - BlendVector(ProceduralPosition, blending)).normalized) * transform.rotation;
+            return Quaternion.FromToRotation(localOffset,
+                (lookPos - BlendVector(ProceduralPosition, blending)).normalized) * transform.rotation;
         }
 
         public Quaternion GetTargetRotation(Vector3 lookPos, Vector3 localOffset, Vector3 pos)

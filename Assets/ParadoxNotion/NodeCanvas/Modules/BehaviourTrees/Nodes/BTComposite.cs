@@ -1,36 +1,36 @@
 ﻿using ParadoxNotion;
 using ParadoxNotion.Design;
+using UnityEditor;
 using UnityEngine;
-
 
 namespace NodeCanvas.BehaviourTrees
 {
-
     ///<summary> Base class for BehaviourTree Composite nodes.</summary>
-    abstract public class BTComposite : BTNode
+    public abstract class BTComposite : BTNode
     {
+        public override string name => base.name.ToUpper();
 
-        public override string name { get { return base.name.ToUpper(); } }
+        public sealed override int maxOutConnections => -1;
+        public sealed override Alignment2x2 commentsAlignment => Alignment2x2.Right;
 
-        sealed public override int maxOutConnections { get { return -1; } }
-        sealed public override Alignment2x2 commentsAlignment { get { return Alignment2x2.Right; } }
-
-        ///----------------------------------------------------------------------------------------------
-        ///---------------------------------------UNITY EDITOR-------------------------------------------
+        /// ----------------------------------------------------------------------------------------------
+        /// ---------------------------------------UNITY EDITOR-------------------------------------------
 #if UNITY_EDITOR
-
-        protected override UnityEditor.GenericMenu OnContextMenu(UnityEditor.GenericMenu menu) {
+        protected override GenericMenu OnContextMenu(GenericMenu menu)
+        {
             menu = base.OnContextMenu(menu);
-            menu = EditorUtils.GetTypeSelectionMenu(typeof(BTComposite), (t) => { this.ReplaceWith(t); }, menu, "Replace");
+            menu = EditorUtils.GetTypeSelectionMenu(typeof(BTComposite), t => { this.ReplaceWith(t); }, menu,
+                "Replace");
             menu.AddItem(new GUIContent("Convert to SubTree"), false, () => { this.ConvertToSubTree(); });
-            if ( outConnections.Count > 0 ) {
+            if (outConnections.Count > 0)
+            {
                 menu.AddItem(new GUIContent("Duplicate Branch"), false, () => { this.DuplicateBranch(graph); });
                 menu.AddItem(new GUIContent("Delete Branch"), false, () => { this.DeleteBranch(); });
             }
+
             return menu;
         }
 
 #endif
-
     }
 }

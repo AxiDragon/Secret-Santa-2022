@@ -1,12 +1,11 @@
-using System;
-using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using UnityEngine;
 
 [CreateAssetMenu(menuName = "Brewing/Ingredient List")]
 public class IngredientList : ScriptableObject, ISerializationCallbackReceiver
 {
-    public List<IngredientScriptableObject> value;
-    [SerializeField] bool alwaysReset;
+    [SerializeField] private bool alwaysReset;
+    [SerializeField] public ObservableCollection<IngredientScriptableObject> value = new();
 
     public void OnBeforeSerialize()
     {
@@ -16,10 +15,7 @@ public class IngredientList : ScriptableObject, ISerializationCallbackReceiver
     {
         if (!alwaysReset)
             return;
-        
-        for (int i = value.Count - 1; i >= 0; i--)
-        {
-            value.RemoveAt(i);
-        } 
+
+        for (var i = value.Count - 1; i >= 0; i--) value.RemoveAt(i);
     }
 }

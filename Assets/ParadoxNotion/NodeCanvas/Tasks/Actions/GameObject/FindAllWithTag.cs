@@ -4,25 +4,20 @@ using NodeCanvas.Framework;
 using ParadoxNotion.Design;
 using UnityEngine;
 
-
 namespace NodeCanvas.Tasks.Actions
 {
-
     [Category("GameObject")]
     [Description("Action will end in Failure if no objects are found")]
     public class FindAllWithTag : ActionTask
     {
+        [BlackboardOnly] public BBParameter<List<GameObject>> saveAs;
 
-        [RequiredField, TagField]
-        public BBParameter<string> searchTag = "Untagged";
-        [BlackboardOnly]
-        public BBParameter<List<GameObject>> saveAs;
+        [RequiredField] [TagField] public BBParameter<string> searchTag = "Untagged";
 
-        protected override string info {
-            get { return "GetObjects '" + searchTag + "' as " + saveAs; }
-        }
+        protected override string info => "GetObjects '" + searchTag + "' as " + saveAs;
 
-        protected override void OnExecute() {
+        protected override void OnExecute()
+        {
             saveAs.value = GameObject.FindGameObjectsWithTag(searchTag.value).ToList();
             EndAction(saveAs.value.Count != 0);
         }

@@ -1,6 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace FIMSpace.BonesStimulation
 {
@@ -18,8 +16,10 @@ namespace FIMSpace.BonesStimulation
             if (GetEffectBlendWeight() * SqueezingAmount <= 0f) return;
 
             _squeeze_time += Time.deltaTime * SqueezingSpeed;
-            float multiplier = SqueezingMultiply * SqueezingAmount * GetEffectBlendWeight();
-            Vector3 newScale = new Vector3(1f + (Mathf.Sin(_squeeze_time) * SqueezingAxis.x) * multiplier, 1f + (Mathf.Cos(_squeeze_time) * SqueezingAxis.y) * multiplier, 1f + (Mathf.Sin(_squeeze_time) * SqueezingAxis.z) * multiplier);
+            var multiplier = SqueezingMultiply * SqueezingAmount * GetEffectBlendWeight();
+            var newScale = new Vector3(1f + Mathf.Sin(_squeeze_time) * SqueezingAxis.x * multiplier,
+                1f + Mathf.Cos(_squeeze_time) * SqueezingAxis.y * multiplier,
+                1f + Mathf.Sin(_squeeze_time) * SqueezingAxis.z * multiplier);
             Bones[0].transform.localScale = Vector3.Scale(Bones[0].transform.localScale, newScale);
         }
     }

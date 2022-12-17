@@ -1,67 +1,52 @@
 #if UNITY_EDITOR
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEditor;
-using UnityEngine;
+using NodeCanvas.Framework;
 using ParadoxNotion;
 using ParadoxNotion.Design;
-using NodeCanvas.Framework;
+using UnityEditor;
+using UnityEditor.Callbacks;
+using UnityEditor.SceneManagement;
+using UnityEngine;
 using CanvasGroup = NodeCanvas.Framework.CanvasGroup;
 using Logger = ParadoxNotion.Services.Logger;
 
 namespace NodeCanvas.Editor
 {
-
     public partial class GraphEditor : EditorWindow
     {
-
-        //the root graph that was first opened in the editor
-        [System.NonSerialized]
-        private Graph _rootGraph;
-        private int _rootGraphID;
-
-        //the GrapOwner if any, that was used to open the editor and from which to read the rootGraph
-        [System.NonSerialized]
-        private GraphOwner _targetOwner;
-        private int _targetOwnerID;
-
         ///----------------------------------------------------------------------------------------------
+        private const float ZOOM_MAX = 1f;
 
-        //the current instance of the opened editor
-        public static GraphEditor current { get; private set; }
-        //the current graph loaded for editing. Can be a nested graph of the root graph
-        public static Graph currentGraph { get; private set; }
-
-        ///----------------------------------------------------------------------------------------------
-        const float ZOOM_MAX = 1f;
-        const float ZOOM_MIN = 0.25f;
-        const int TAB_HEIGHT = 21;
-        const int TOP_MARGIN = TAB_HEIGHT + 0;
-        const int BOTTOM_MARGIN = 5;
-        const int SIDE_MARGIN = 5;
-        const int GRID_SIZE = 20;
+        private const float ZOOM_MIN = 0.25f;
+        private const int TAB_HEIGHT = 21;
+        private const int TOP_MARGIN = TAB_HEIGHT + 0;
+        private const int BOTTOM_MARGIN = 5;
+        private const int SIDE_MARGIN = 5;
+        private const int GRID_SIZE = 20;
         private static Rect canvasRect; //rect within which the graph is drawn (the window)
         private static Rect viewRect; //the panning rect that is drawn within canvasRect
         private static Rect minimapRect; //rect to show minimap within
 
         ///----------------------------------------------------------------------------------------------
-
         private static Event e;
+
         private static bool isMultiSelecting;
         private static Vector2 selectionStartPos;
         private static bool isResizingMinimap;
         private static bool isDraggingMinimap;
         private static bool willRepaint = true;
         private static bool fullDrawPass = true;
-        private static System.Action OnDoPopup;
+        private static Action OnDoPopup;
 
         private static Node[] tempCanvasGroupNodes;
         private static CanvasGroup[] tempCanvasGroupGroups;
 
         ///----------------------------------------------------------------------------------------------
-
         private static float lastUpdateTime = -1;
+
         private static Vector2? smoothPan;
         private static float? smoothZoomFactor;
         private static Vector2 _panVelocity = Vector2.one;
@@ -70,20 +55,33 @@ namespace NodeCanvas.Editor
         private static Rect pingRect;
 
         ///----------------------------------------------------------------------------------------------
-
         private static bool welcomeShown;
+
+        //the root graph that was first opened in the editor
+        [NonSerialized] private Graph _rootGraph;
+
+        private int _rootGraphID;
+
+        //the GrapOwner if any, that was used to open the editor and from which to read the rootGraph
+        [NonSerialized] private GraphOwner _targetOwner;
+
+        private int _targetOwnerID;
 
         ///----------------------------------------------------------------------------------------------
 
-        public static event System.Action<Graph> onCurrentGraphChanged;
+        //the current instance of the opened editor
+        public static GraphEditor current { get; private set; }
+
+        //the current graph loaded for editing. Can be a nested graph of the root graph
+        public static Graph currentGraph { get; private set; }
 
         //The graph from which we start editing
-        public static Graph rootGraph {
+        public static Graph rootGraph
+        {
             get
             {
-                if ( current._rootGraph == null ) {
+                if (current._rootGraph == null)
                     current._rootGraph = EditorUtility.InstanceIDToObject(current._rootGraphID) as Graph;
-                }
                 return current._rootGraph;
             }
             private set
@@ -94,16 +92,15 @@ namespace NodeCanvas.Editor
         }
 
         //The owner of the root graph if any
-        public static GraphOwner targetOwner {
+        public static GraphOwner targetOwner
+        {
             get
             {
-                if ( current == null ) { //this fix the maximize/minimize window
+                if (current == null) //this fix the maximize/minimize window
                     current = OpenWindow();
-                }
 
-                if ( current._targetOwner == null ) {
+                if (current._targetOwner == null)
                     current._targetOwner = EditorUtility.InstanceIDToObject(current._targetOwnerID) as GraphOwner;
-                }
                 return current._targetOwner;
             }
             private set
@@ -114,50 +111,65 @@ namespace NodeCanvas.Editor
         }
 
         //The translation of the graph
-        private static Vector2 pan {
-            get { return currentGraph != null ? currentGraph.translation : viewCanvasCenter; }
+        private static Vector2 pan
+        {
+            get => currentGraph != null ? currentGraph.translation : viewCanvasCenter;
             set
             {
-                if ( currentGraph != null ) {
+                if (currentGraph != null)
+                {
                     var t = value;
-                    if ( smoothPan == null ) {
+                    if (smoothPan == null)
+                    {
                         t.x = Mathf.Round(t.x); //pixel perfect correction
                         t.y = Mathf.Round(t.y); //pixel perfect correction
                     }
+
                     currentGraph.translation = t;
                 }
             }
         }
 
         //The zoom factor of the graph
-        private static float zoomFactor {
-            get { return currentGraph != null ? Mathf.Clamp(currentGraph.zoomFactor, ZOOM_MIN, ZOOM_MAX) : ZOOM_MAX; }
-            set { if ( currentGraph != null ) currentGraph.zoomFactor = Mathf.Clamp(value, ZOOM_MIN, ZOOM_MAX); }
+        private static float zoomFactor
+        {
+            get => currentGraph != null ? Mathf.Clamp(currentGraph.zoomFactor, ZOOM_MIN, ZOOM_MAX) : ZOOM_MAX;
+            set
+            {
+                if (currentGraph != null) currentGraph.zoomFactor = Mathf.Clamp(value, ZOOM_MIN, ZOOM_MAX);
+            }
         }
 
         //The center of the canvas
-        private static Vector2 viewCanvasCenter {
-            get { return viewRect.size / 2; }
-        }
+        private static Vector2 viewCanvasCenter => viewRect.size / 2;
 
         //The mouse position in the canvas
-        private static Vector2 mousePosInCanvas {
-            get { return ViewToCanvas(Event.current.mousePosition); }
-        }
+        private static Vector2 mousePosInCanvas => ViewToCanvas(Event.current.mousePosition);
 
         //window width. Handles retina
-        private static float screenWidth {
-            get { return Screen.width / EditorGUIUtility.pixelsPerPoint; }
-        }
+        private static float screenWidth => Screen.width / EditorGUIUtility.pixelsPerPoint;
 
         //window height. Handles retina
-        private static float screenHeight {
-            get { return Screen.height / EditorGUIUtility.pixelsPerPoint; }
+        private static float screenHeight => Screen.height / EditorGUIUtility.pixelsPerPoint;
+
+        ///<summary>Editor update</summary>
+        private void Update()
+        {
+            var currentTime = Time.realtimeSinceStartup;
+            var deltaTime = currentTime - lastUpdateTime;
+            lastUpdateTime = currentTime;
+
+            var needsRepaint = false;
+            needsRepaint |= UpdateSmoothPan(deltaTime);
+            needsRepaint |= UpdateSmoothZoom(deltaTime);
+            needsRepaint |= UpdatePing(deltaTime);
+            if (needsRepaint) Repaint();
         }
 
         ///----------------------------------------------------------------------------------------------
         //...
-        void OnEnable() {
+        private void OnEnable()
+        {
             current = this;
             titleContent = new GUIContent("Canvas", StyleSheet.canvasIcon);
 
@@ -170,8 +182,8 @@ namespace NodeCanvas.Editor
             EditorApplication.playModeStateChanged += OnPlayModeChange;
 
 #if UNITY_2018_3_OR_NEWER
-            UnityEditor.SceneManagement.PrefabStage.prefabStageClosing -= OnPrefabStageClosing;
-            UnityEditor.SceneManagement.PrefabStage.prefabStageClosing += OnPrefabStageClosing;
+            PrefabStage.prefabStageClosing -= OnPrefabStageClosing;
+            PrefabStage.prefabStageClosing += OnPrefabStageClosing;
 #endif
 
             Selection.selectionChanged -= OnUnityObjectSelectionChange;
@@ -185,7 +197,8 @@ namespace NodeCanvas.Editor
         }
 
         //...
-        void OnDisable() {
+        private void OnDisable()
+        {
             current = null;
             welcomeShown = false;
             GraphEditorUtility.activeElement = null;
@@ -196,7 +209,7 @@ namespace NodeCanvas.Editor
             EditorApplication.playModeStateChanged -= OnPlayModeChange;
 
 #if UNITY_2018_3_OR_NEWER
-            UnityEditor.SceneManagement.PrefabStage.prefabStageClosing -= OnPrefabStageClosing;
+            PrefabStage.prefabStageClosing -= OnPrefabStageClosing;
 #endif
 
             Selection.selectionChanged -= OnUnityObjectSelectionChange;
@@ -205,244 +218,11 @@ namespace NodeCanvas.Editor
             // AssetDatabase.SaveAssets();
         }
 
-        //...
-        void OnUndoRedoPerformed() {
-            if ( current == null || currentGraph == null ) { return; }
-            GraphEditorUtility.activeElement = null;
-            GraphEditorUtility.activeElements = null;
-            tempCanvasGroupNodes = null;
-            tempCanvasGroupGroups = null;
-            GUIUtility.hotControl = 0;
-            GUIUtility.keyboardControl = 0;
-            willRepaint = true;
-            fullDrawPass = true;
-            if ( !Application.isPlaying ) {
-                UpdateReferencesAndNodeIDs();
-                currentGraph.Validate();
-            }
-        }
-
-        //...
-        void OnPlayModeChange(PlayModeStateChange state) {
-            RemoveNotification();
-            GraphEditorUtility.activeElement = null;
-            welcomeShown = true;
-            willRepaint = true;
-            fullDrawPass = true;
-        }
-
-#if UNITY_2018_3_OR_NEWER
-        void OnPrefabStageClosing(UnityEditor.SceneManagement.PrefabStage stage) {
-            //when exiting prefab stage we are left with a floating graph instance which can creat confusion
-            SetReferences(null, null, null);
-        }
-#endif
-
-        //Change viewing graph based on Graph or GraphOwner
-        void OnUnityObjectSelectionChange() {
-
-            if ( Prefs.isEditorLocked && rootGraph != null ) {
-                return;
-            }
-
-            if ( Selection.activeObject is GraphOwner ) {
-                SetReferences((GraphOwner)Selection.activeObject);
-                return;
-            }
-
-            if ( Selection.activeObject is Graph ) {
-                SetReferences((Graph)Selection.activeObject);
-                return;
-            }
-
-            if ( Selection.activeGameObject != null ) {
-                var foundOwner = Selection.activeGameObject.GetComponent<GraphOwner>();
-                if ( foundOwner != null ) { SetReferences(foundOwner); }
-            }
-        }
-
-        //Listen to Logs and return true if handled
-        bool OnLogMessageReceived(Logger.Message msg) {
-            if ( msg.tag == LogTag.EDITOR ) {
-                if ( !string.IsNullOrEmpty(msg.text) ) {
-                    ShowNotification(new GUIContent(msg.text));
-                }
-                return true;
-            }
-            return false;
-        }
-
-        //Whenever the graph we are viewing has changed and after the fact.
-        void OnCurrentGraphChanged() {
-            UpdateReferencesAndNodeIDs();
-            GraphEditorUtility.activeElement = null;
-            willRepaint = true;
-            fullDrawPass = true;
-            smoothPan = null;
-            smoothZoomFactor = null;
-            if ( onCurrentGraphChanged != null ) {
-                onCurrentGraphChanged(currentGraph);
-            }
-        }
-
-        //Update the references for editor convenience.
-        void UpdateReferencesAndNodeIDs() {
-
-            rootGraph = targetOwner != null ? targetOwner.graph : rootGraph;
-
-            //do this in editor only. In runtime these are updated when graph initialize anyway
-            if ( !Application.isPlaying && rootGraph != null ) {
-                rootGraph.UpdateNodeIDs(true);
-                rootGraph.UpdateReferencesFromOwner(targetOwner, true);
-
-                //update refs for the currenlty viewing nested graph as well
-                var deepGraph = GetCurrentGraph(rootGraph);
-                deepGraph.UpdateNodeIDs(true);
-                deepGraph.UpdateReferencesFromOwner(targetOwner, true);
-            }
-        }
-
-        [UnityEditor.Callbacks.OnOpenAsset(1)]
-        public static bool OpenAsset(int instanceID, int line) {
-            var target = EditorUtility.InstanceIDToObject(instanceID) as Graph;
-            if ( target != null ) {
-                GraphEditor.OpenWindow(target);
-                return true;
-            }
-            return false;
-        }
-
-        ///<summary>Open the window without any references</summary>
-        public static GraphEditor OpenWindow() { return OpenWindow(null, null, null); }
-        ///<summary>Opening the window for a graph owner</summary>
-        public static GraphEditor OpenWindow(GraphOwner owner) { return OpenWindow(owner.graph, owner, owner.blackboard); }
-        ///<summary>For opening the window from gui button in the nodegraph's Inspector.</summary>
-        public static GraphEditor OpenWindow(Graph newGraph) { return OpenWindow(newGraph, null, newGraph.blackboard); }
-        ///<summary>Open GraphEditor initializing target graph</summary>
-        public static GraphEditor OpenWindow(Graph newGraph, GraphOwner owner, IBlackboard blackboard) {
-            var window = GetWindow<GraphEditor>();
-            SetReferences(newGraph, owner, blackboard);
-            if ( !Prefs.hideWelcomeWindow && !Application.isPlaying && welcomeShown == false ) {
-                welcomeShown = true;
-                var graphType = newGraph != null ? newGraph.GetType() : null;
-                WelcomeWindow.ShowWindow(graphType);
-            }
-            return window;
-        }
-
-        ///<summary>Set GraphEditor inspected references</summary>
-        public static void SetReferences(GraphOwner newOwner) { SetReferences(newOwner.graph, newOwner, newOwner.blackboard); }
-        ///<summary>Set GraphEditor inspected references</summary>
-        public static void SetReferences(Graph newGraph) { SetReferences(newGraph, null, newGraph.blackboard); }
-        ///<summary>Set GraphEditor inspected references</summary>
-        public static void SetReferences(Graph newGraph, GraphOwner newOwner, IBlackboard newBlackboard) {
-            if ( current == null ) {
-                return;
-            }
-            willRepaint = true;
-            fullDrawPass = true;
-            rootGraph = newGraph;
-            targetOwner = newOwner;
-            if ( rootGraph != null ) {
-                rootGraph.SetCurrentChildGraphAssignable(null);
-                if ( !Application.isPlaying ) {
-                    rootGraph.UpdateNodeIDs(true);
-                    rootGraph.UpdateReferences(newOwner, newBlackboard, true);
-                }
-            }
-            GraphEditorUtility.activeElement = null;
-            current.Repaint();
-        }
-
-        ///<summary>Editor update</summary>
-        void Update() {
-            var currentTime = Time.realtimeSinceStartup;
-            var deltaTime = currentTime - lastUpdateTime;
-            lastUpdateTime = currentTime;
-
-            var needsRepaint = false;
-            needsRepaint |= UpdateSmoothPan(deltaTime);
-            needsRepaint |= UpdateSmoothZoom(deltaTime);
-            needsRepaint |= UpdatePing(deltaTime);
-            if ( needsRepaint ) {
-                Repaint();
-            }
-        }
-
-        ///<summary>Update smooth pan</summary>
-        bool UpdateSmoothPan(float deltaTime) {
-
-            if ( smoothPan == null ) {
-                return false;
-            }
-
-            var targetPan = (Vector2)smoothPan;
-            if ( ( targetPan - pan ).magnitude < 0.1f ) {
-                smoothPan = null;
-                return false;
-            }
-
-            targetPan = new Vector2(Mathf.FloorToInt(targetPan.x), Mathf.FloorToInt(targetPan.y));
-            pan = Vector2.SmoothDamp(pan, targetPan, ref _panVelocity, 0.08f, Mathf.Infinity, deltaTime);
-            return true;
-        }
-
-        ///<summary>Update smooth pan</summary>
-        bool UpdateSmoothZoom(float deltaTime) {
-
-            if ( smoothZoomFactor == null ) {
-                return false;
-            }
-
-            var targetZoom = (float)smoothZoomFactor;
-            if ( Mathf.Abs(targetZoom - zoomFactor) < 0.00001f ) {
-                smoothZoomFactor = null;
-                return false;
-            }
-
-            zoomFactor = Mathf.SmoothDamp(zoomFactor, targetZoom, ref _zoomVelocity, 0.08f, Mathf.Infinity, deltaTime);
-            if ( Mathf.Abs(1 - zoomFactor) < 0.00001f ) { zoomFactor = 1; }
-            return true;
-        }
-
-        ///<summary>Update ping value</summary>
-        bool UpdatePing(float deltaTime) {
-            if ( pingValue > 0 ) {
-                pingValue -= deltaTime;
-                return true;
-            }
-            return false;
-        }
-
-        ///----------------------------------------------------------------------------------------------
-
-        //GUI space to canvas space
-        static Vector2 ViewToCanvas(Vector2 viewPos) {
-            return ( viewPos - pan ) / zoomFactor;
-        }
-
-        //Canvas space to GUI space
-        static Vector2 CanvasToView(Vector2 canvasPos) {
-            return ( canvasPos * zoomFactor ) + pan;
-        }
-
-        //Show modal quick popup
-        static void DoPopup(System.Action Call) {
-            OnDoPopup = Call;
-        }
-
-        //Just so that there is some repainting going on
-        void OnInspectorUpdate() {
-            if ( !willRepaint ) {
-                Repaint();
-            }
-        }
-
         ///----------------------------------------------------------------------------------------------
 
         //...
-        void OnGUI() {
-
+        private void OnGUI()
+        {
             //Init gui
             // GUI.skin = null;
             GUI.color = Color.white;
@@ -452,25 +232,21 @@ namespace NodeCanvas.Editor
             GraphEditorUtility.realMousePosition = e.mousePosition;
 
             //canvas an minimap rects
-            canvasRect = Rect.MinMaxRect(SIDE_MARGIN, TOP_MARGIN, position.width - SIDE_MARGIN, position.height - BOTTOM_MARGIN);
+            canvasRect = Rect.MinMaxRect(SIDE_MARGIN, TOP_MARGIN, position.width - SIDE_MARGIN,
+                position.height - BOTTOM_MARGIN);
             var aspect = canvasRect.width / canvasRect.height;
-            minimapRect = Rect.MinMaxRect(canvasRect.xMax - ( Prefs.minimapSize * aspect ), canvasRect.yMax - Prefs.minimapSize, canvasRect.xMax - 2, canvasRect.yMax - 2);
+            minimapRect = Rect.MinMaxRect(canvasRect.xMax - Prefs.minimapSize * aspect,
+                canvasRect.yMax - Prefs.minimapSize, canvasRect.xMax - 2, canvasRect.yMax - 2);
             //canvas bg
             Styles.Draw(canvasRect, StyleSheet.canvasBG);
 
-            if ( !CheckSumOK() ) {
-                return;
-            }
+            if (!CheckSumOK()) return;
 
             ///----------------------------------------------------------------------------------------------
 
-            if ( e.type == EventType.MouseDown ) {
-                RemoveNotification();
-            }
+            if (e.type == EventType.MouseDown) RemoveNotification();
 
-            if ( mouseOverWindow == current && ( e.isMouse || e.isKey ) ) {
-                willRepaint = true;
-            }
+            if (mouseOverWindow == current && (e.isMouse || e.isKey)) willRepaint = true;
 
             ///<summary>should we set dirty? Put in practise at the end</summary>
             var willDirty = e.rawType == EventType.MouseUp;
@@ -486,9 +262,7 @@ namespace NodeCanvas.Editor
             //begin zoom
             var originalCanvasRect = canvasRect;
             var originalMatrix = default(Matrix4x4);
-            if ( zoomFactor != 1 ) {
-                canvasRect = StartZoomArea(canvasRect, zoomFactor, out originalMatrix);
-            }
+            if (zoomFactor != 1) canvasRect = StartZoomArea(canvasRect, zoomFactor, out originalMatrix);
 
             {
                 // calc viewRect
@@ -498,7 +272,7 @@ namespace NodeCanvas.Editor
                 viewRect.position -= pan / zoomFactor;
 
                 //main group
-                GUI.BeginClip(canvasRect, pan / zoomFactor, default(Vector2), false);
+                GUI.BeginClip(canvasRect, pan / zoomFactor, default, false);
                 {
                     DoCanvasGroups();
                     BeginWindows();
@@ -511,7 +285,8 @@ namespace NodeCanvas.Editor
             }
 
             //end zoom
-            if ( zoomFactor != 1 && originalMatrix != default(Matrix4x4) ) {
+            if (zoomFactor != 1 && originalMatrix != default)
+            {
                 EndZoomArea(originalMatrix);
                 //set original back
                 canvasRect = originalCanvasRect;
@@ -527,29 +302,28 @@ namespace NodeCanvas.Editor
             // ShowConsoleLog();
 
             //dirty?
-            if ( willDirty ) {
+            if (willDirty)
+            {
                 willDirty = false;
                 willRepaint = true;
                 currentGraph.SelfSerialize();
                 UndoUtility.SetDirty(currentGraph);
-                if ( targetOwner != null && targetOwner.graphIsBound ) {
-                    UndoUtility.SetDirty(targetOwner);
-                }
+                if (targetOwner != null && targetOwner.graphIsBound) UndoUtility.SetDirty(targetOwner);
             }
 
             //repaint?
-            if ( willRepaint || rootGraph.isRunning /*|| e.type == EventType.MouseMove*/ ) {
-                Repaint();
-            }
+            if (willRepaint || rootGraph.isRunning /*|| e.type == EventType.MouseMove*/) Repaint();
 
             //reset flags
-            if ( e.type == EventType.Repaint ) {
+            if (e.type == EventType.Repaint)
+            {
                 fullDrawPass = false;
                 willRepaint = false;
             }
 
             //hack for quick popups
-            if ( OnDoPopup != null ) {
+            if (OnDoPopup != null)
+            {
                 var temp = OnDoPopup;
                 OnDoPopup = null;
                 QuickPopup.Show(temp);
@@ -563,50 +337,310 @@ namespace NodeCanvas.Editor
             GUI.backgroundColor = Color.white;
         }
 
+        //Just so that there is some repainting going on
+        private void OnInspectorUpdate()
+        {
+            if (!willRepaint) Repaint();
+        }
+
+        ///----------------------------------------------------------------------------------------------
+        public static event Action<Graph> onCurrentGraphChanged;
+
+        //...
+        private void OnUndoRedoPerformed()
+        {
+            if (current == null || currentGraph == null) return;
+            GraphEditorUtility.activeElement = null;
+            GraphEditorUtility.activeElements = null;
+            tempCanvasGroupNodes = null;
+            tempCanvasGroupGroups = null;
+            GUIUtility.hotControl = 0;
+            GUIUtility.keyboardControl = 0;
+            willRepaint = true;
+            fullDrawPass = true;
+            if (!Application.isPlaying)
+            {
+                UpdateReferencesAndNodeIDs();
+                currentGraph.Validate();
+            }
+        }
+
+        //...
+        private void OnPlayModeChange(PlayModeStateChange state)
+        {
+            RemoveNotification();
+            GraphEditorUtility.activeElement = null;
+            welcomeShown = true;
+            willRepaint = true;
+            fullDrawPass = true;
+        }
+
+#if UNITY_2018_3_OR_NEWER
+        private void OnPrefabStageClosing(PrefabStage stage)
+        {
+            //when exiting prefab stage we are left with a floating graph instance which can creat confusion
+            SetReferences(null, null, null);
+        }
+#endif
+
+        //Change viewing graph based on Graph or GraphOwner
+        private void OnUnityObjectSelectionChange()
+        {
+            if (Prefs.isEditorLocked && rootGraph != null) return;
+
+            if (Selection.activeObject is GraphOwner)
+            {
+                SetReferences((GraphOwner)Selection.activeObject);
+                return;
+            }
+
+            if (Selection.activeObject is Graph)
+            {
+                SetReferences((Graph)Selection.activeObject);
+                return;
+            }
+
+            if (Selection.activeGameObject != null)
+            {
+                var foundOwner = Selection.activeGameObject.GetComponent<GraphOwner>();
+                if (foundOwner != null) SetReferences(foundOwner);
+            }
+        }
+
+        //Listen to Logs and return true if handled
+        private bool OnLogMessageReceived(Logger.Message msg)
+        {
+            if (msg.tag == LogTag.EDITOR)
+            {
+                if (!string.IsNullOrEmpty(msg.text)) ShowNotification(new GUIContent(msg.text));
+                return true;
+            }
+
+            return false;
+        }
+
+        //Whenever the graph we are viewing has changed and after the fact.
+        private void OnCurrentGraphChanged()
+        {
+            UpdateReferencesAndNodeIDs();
+            GraphEditorUtility.activeElement = null;
+            willRepaint = true;
+            fullDrawPass = true;
+            smoothPan = null;
+            smoothZoomFactor = null;
+            if (onCurrentGraphChanged != null) onCurrentGraphChanged(currentGraph);
+        }
+
+        //Update the references for editor convenience.
+        private void UpdateReferencesAndNodeIDs()
+        {
+            rootGraph = targetOwner != null ? targetOwner.graph : rootGraph;
+
+            //do this in editor only. In runtime these are updated when graph initialize anyway
+            if (!Application.isPlaying && rootGraph != null)
+            {
+                rootGraph.UpdateNodeIDs(true);
+                rootGraph.UpdateReferencesFromOwner(targetOwner, true);
+
+                //update refs for the currenlty viewing nested graph as well
+                var deepGraph = GetCurrentGraph(rootGraph);
+                deepGraph.UpdateNodeIDs(true);
+                deepGraph.UpdateReferencesFromOwner(targetOwner, true);
+            }
+        }
+
+        [OnOpenAsset(1)]
+        public static bool OpenAsset(int instanceID, int line)
+        {
+            var target = EditorUtility.InstanceIDToObject(instanceID) as Graph;
+            if (target != null)
+            {
+                OpenWindow(target);
+                return true;
+            }
+
+            return false;
+        }
+
+        ///<summary>Open the window without any references</summary>
+        public static GraphEditor OpenWindow()
+        {
+            return OpenWindow(null, null, null);
+        }
+
+        ///<summary>Opening the window for a graph owner</summary>
+        public static GraphEditor OpenWindow(GraphOwner owner)
+        {
+            return OpenWindow(owner.graph, owner, owner.blackboard);
+        }
+
+        ///<summary>For opening the window from gui button in the nodegraph's Inspector.</summary>
+        public static GraphEditor OpenWindow(Graph newGraph)
+        {
+            return OpenWindow(newGraph, null, newGraph.blackboard);
+        }
+
+        ///<summary>Open GraphEditor initializing target graph</summary>
+        public static GraphEditor OpenWindow(Graph newGraph, GraphOwner owner, IBlackboard blackboard)
+        {
+            var window = GetWindow<GraphEditor>();
+            SetReferences(newGraph, owner, blackboard);
+            if (!Prefs.hideWelcomeWindow && !Application.isPlaying && welcomeShown == false)
+            {
+                welcomeShown = true;
+                var graphType = newGraph != null ? newGraph.GetType() : null;
+                WelcomeWindow.ShowWindow(graphType);
+            }
+
+            return window;
+        }
+
+        ///<summary>Set GraphEditor inspected references</summary>
+        public static void SetReferences(GraphOwner newOwner)
+        {
+            SetReferences(newOwner.graph, newOwner, newOwner.blackboard);
+        }
+
+        ///<summary>Set GraphEditor inspected references</summary>
+        public static void SetReferences(Graph newGraph)
+        {
+            SetReferences(newGraph, null, newGraph.blackboard);
+        }
+
+        ///<summary>Set GraphEditor inspected references</summary>
+        public static void SetReferences(Graph newGraph, GraphOwner newOwner, IBlackboard newBlackboard)
+        {
+            if (current == null) return;
+            willRepaint = true;
+            fullDrawPass = true;
+            rootGraph = newGraph;
+            targetOwner = newOwner;
+            if (rootGraph != null)
+            {
+                rootGraph.SetCurrentChildGraphAssignable(null);
+                if (!Application.isPlaying)
+                {
+                    rootGraph.UpdateNodeIDs(true);
+                    rootGraph.UpdateReferences(newOwner, newBlackboard, true);
+                }
+            }
+
+            GraphEditorUtility.activeElement = null;
+            current.Repaint();
+        }
+
+        ///<summary>Update smooth pan</summary>
+        private bool UpdateSmoothPan(float deltaTime)
+        {
+            if (smoothPan == null) return false;
+
+            var targetPan = (Vector2)smoothPan;
+            if ((targetPan - pan).magnitude < 0.1f)
+            {
+                smoothPan = null;
+                return false;
+            }
+
+            targetPan = new Vector2(Mathf.FloorToInt(targetPan.x), Mathf.FloorToInt(targetPan.y));
+            pan = Vector2.SmoothDamp(pan, targetPan, ref _panVelocity, 0.08f, Mathf.Infinity, deltaTime);
+            return true;
+        }
+
+        ///<summary>Update smooth pan</summary>
+        private bool UpdateSmoothZoom(float deltaTime)
+        {
+            if (smoothZoomFactor == null) return false;
+
+            var targetZoom = (float)smoothZoomFactor;
+            if (Mathf.Abs(targetZoom - zoomFactor) < 0.00001f)
+            {
+                smoothZoomFactor = null;
+                return false;
+            }
+
+            zoomFactor = Mathf.SmoothDamp(zoomFactor, targetZoom, ref _zoomVelocity, 0.08f, Mathf.Infinity, deltaTime);
+            if (Mathf.Abs(1 - zoomFactor) < 0.00001f) zoomFactor = 1;
+            return true;
+        }
+
+        ///<summary>Update ping value</summary>
+        private bool UpdatePing(float deltaTime)
+        {
+            if (pingValue > 0)
+            {
+                pingValue -= deltaTime;
+                return true;
+            }
+
+            return false;
+        }
+
+        ///----------------------------------------------------------------------------------------------
+
+        //GUI space to canvas space
+        private static Vector2 ViewToCanvas(Vector2 viewPos)
+        {
+            return (viewPos - pan) / zoomFactor;
+        }
+
+        //Canvas space to GUI space
+        private static Vector2 CanvasToView(Vector2 canvasPos)
+        {
+            return canvasPos * zoomFactor + pan;
+        }
+
+        //Show modal quick popup
+        private static void DoPopup(Action Call)
+        {
+            OnDoPopup = Call;
+        }
+
         ///----------------------------------------------------------------------------------------------
 
         //Check that all is ok to continue with GUI
-        bool CheckSumOK() {
-
-            if ( EditorApplication.isCompiling && !Application.isPlaying ) {
+        private bool CheckSumOK()
+        {
+            if (EditorApplication.isCompiling && !Application.isPlaying)
+            {
                 ShowNotification(new GUIContent("...Compiling Please Wait..."));
                 willRepaint = true;
                 return false;
             }
 
             //get the graph from the GraphOwner if one is set
-            if ( targetOwner != null ) {
+            if (targetOwner != null)
+            {
                 rootGraph = targetOwner.graph;
-                if ( EditorUtility.IsPersistent(targetOwner) && targetOwner.graphIsBound ) {
-                    ShowNotification(new GUIContent("Bound Graphs on prefabs can only be edited by opening the prefab in the prefab editor."));
+                if (EditorUtility.IsPersistent(targetOwner) && targetOwner.graphIsBound)
+                {
+                    ShowNotification(new GUIContent(
+                        "Bound Graphs on prefabs can only be edited by opening the prefab in the prefab editor."));
                     var btnRect = new Rect(0, 0, 200, 50);
                     btnRect.center = new Vector2(canvasRect.width / 2, TOP_MARGIN + 70);
-                    if ( GUI.Button(btnRect, "Open Prefab") ) {
-                        AssetDatabase.OpenAsset(targetOwner);
-                    }
+                    if (GUI.Button(btnRect, "Open Prefab")) AssetDatabase.OpenAsset(targetOwner);
                     return false;
                 }
             }
 
-            if ( rootGraph == null ) {
+            if (rootGraph == null)
+            {
                 ShowEmptyGraphGUI();
                 return false;
             }
 
             //set the currently viewing graph by getting the current child graph from the root graph recursively
             var curr = GetCurrentGraph(rootGraph);
-            if ( !ReferenceEquals(curr, currentGraph) ) {
+            if (!ReferenceEquals(curr, currentGraph))
+            {
                 currentGraph = curr;
                 OnCurrentGraphChanged();
             }
 
-            if ( currentGraph == null || ReferenceEquals(currentGraph, null) ) {
-                return false;
-            }
+            if (currentGraph == null || ReferenceEquals(currentGraph, null)) return false;
 
-            if ( currentGraph.serializationHalted ) {
-                ShowNotification(new GUIContent("Due to last deserialization attempt failure, this graph is protected from changes.\nAny change you make is not saved until the graph has deserialized successfully.\nPlease try restarting Unity to attempt deserialization again.\nIf you think this is a bug, please contact support."));
-            }
+            if (currentGraph.serializationHalted)
+                ShowNotification(new GUIContent(
+                    "Due to last deserialization attempt failure, this graph is protected from changes.\nAny change you make is not saved until the graph has deserialized successfully.\nPlease try restarting Unity to attempt deserialization again.\nIf you think this is a bug, please contact support."));
 
             return true;
         }
@@ -615,15 +649,15 @@ namespace NodeCanvas.Editor
         ///----------------------------------------------------------------------------------------------
 
         //Recursively get the currenlty showing nested graph starting from the root
-        static Graph GetCurrentGraph(Graph root) {
-            if ( root.GetCurrentChildGraph() == null ) {
-                return root;
-            }
+        private static Graph GetCurrentGraph(Graph root)
+        {
+            if (root.GetCurrentChildGraph() == null) return root;
             return GetCurrentGraph(root.GetCurrentChildGraph());
         }
 
         //Starts a zoom area, returns the scaled container rect
-        static Rect StartZoomArea(Rect container, float zoomFactor, out Matrix4x4 oldMatrix) {
+        private static Rect StartZoomArea(Rect container, float zoomFactor, out Matrix4x4 oldMatrix)
+        {
             GUI.EndClip();
             container.y += TAB_HEIGHT;
             container.width *= 1 / zoomFactor;
@@ -636,89 +670,106 @@ namespace NodeCanvas.Editor
         }
 
         //Ends the zoom area
-        static void EndZoomArea(Matrix4x4 oldMatrix) {
+        private static void EndZoomArea(Matrix4x4 oldMatrix)
+        {
             GUI.matrix = oldMatrix;
             var recover = new Rect(0, TAB_HEIGHT, screenWidth, screenHeight);
             GUI.BeginClip(recover);
         }
 
         //This is called while within Begin/End windows
-        static void ShowNodesGUI(Graph graph, Rect drawCanvas, bool fullDrawPass, Vector2 canvasMousePos, float zoomFactor) {
-
+        private static void ShowNodesGUI(Graph graph, Rect drawCanvas, bool fullDrawPass, Vector2 canvasMousePos,
+            float zoomFactor)
+        {
             //ensure IDs are updated. Must do on seperate iteration before gui
             //FIXME: while it's not expensive, it's still an extra iteration -> move elsewhere?
-            if ( Event.current.type == EventType.Layout ) {
-                for ( var i = 0; i < graph.allNodes.Count; i++ ) {
-                    if ( graph.allNodes[i].ID != i ) {
+            if (Event.current.type == EventType.Layout)
+                for (var i = 0; i < graph.allNodes.Count; i++)
+                    if (graph.allNodes[i].ID != i)
+                    {
                         graph.UpdateNodeIDs(true);
                         break;
                     }
-                }
-            }
 
-            for ( var i = 0; i < graph.allNodes.Count; i++ ) {
+            for (var i = 0; i < graph.allNodes.Count; i++)
                 Node.ShowNodeGUI(graph.allNodes[i], drawCanvas, fullDrawPass, canvasMousePos, zoomFactor);
-            }
 
-            if ( graph.primeNode != null ) {
-                GUI.Box(new Rect(graph.primeNode.rect.x, graph.primeNode.rect.y - 20, graph.primeNode.rect.width, 20), "<b>START</b>", StyleSheet.box);
-            }
+            if (graph.primeNode != null)
+                GUI.Box(new Rect(graph.primeNode.rect.x, graph.primeNode.rect.y - 20, graph.primeNode.rect.width, 20),
+                    "<b>START</b>", StyleSheet.box);
         }
 
         ///<summary>Translate the graph to focus selection</summary>
-        public static void FocusSelection() {
-            if ( GraphEditorUtility.activeElements != null && GraphEditorUtility.activeElements.Count > 0 ) {
+        public static void FocusSelection()
+        {
+            if (GraphEditorUtility.activeElements != null && GraphEditorUtility.activeElements.Count > 0)
+            {
                 FocusPosition(GetNodeBounds(GraphEditorUtility.activeElements.Cast<Node>().ToList()).center);
                 return;
             }
-            if ( GraphEditorUtility.activeElement != null ) {
+
+            if (GraphEditorUtility.activeElement != null)
+            {
                 FocusElement(GraphEditorUtility.activeElement);
                 return;
             }
-            if ( currentGraph.allNodes.Count > 0 ) {
+
+            if (currentGraph.allNodes.Count > 0)
+            {
                 FocusPosition(GetNodeBounds(currentGraph.allNodes).center);
                 return;
             }
+
             FocusPosition(viewCanvasCenter);
         }
 
         ///<summary>Ping element</summary>
-        public static void PingElement(IGraphElement element) {
-            if ( element is Node ) { PingRect(( element as Node ).rect); }
-            if ( element is Connection ) { PingRect(( element as Connection ).GetMidRect()); }
+        public static void PingElement(IGraphElement element)
+        {
+            if (element is Node) PingRect((element as Node).rect);
+            if (element is Connection) PingRect((element as Connection).GetMidRect());
         }
 
         ///<summary>Translate the graph to the center of target element (node, connection)</summary>
-        public static void FocusElement(IGraphElement element, bool alsoSelect = false) {
-            if ( element is Node ) { FocusNode((Node)element, alsoSelect); }
-            if ( element is Connection ) { FocusConnection((Connection)element, alsoSelect); }
+        public static void FocusElement(IGraphElement element, bool alsoSelect = false)
+        {
+            if (element is Node) FocusNode((Node)element, alsoSelect);
+            if (element is Connection) FocusConnection((Connection)element, alsoSelect);
         }
 
         ///<summary>Translate the graph to the center of the target node</summary>
-        public static void FocusNode(Node node, bool alsoSelect = false) {
-            if ( currentGraph == node.graph ) {
+        public static void FocusNode(Node node, bool alsoSelect = false)
+        {
+            if (currentGraph == node.graph)
+            {
                 FocusPosition(node.rect.center);
                 PingRect(node.rect);
-                if ( alsoSelect ) { GraphEditorUtility.activeElement = node; }
+                if (alsoSelect) GraphEditorUtility.activeElement = node;
             }
         }
 
         ///<summary>Translate the graph to the center of the target connection</summary>
-        public static void FocusConnection(Connection connection, bool alsoSelect = false) {
-            if ( currentGraph == connection.sourceNode.graph ) {
+        public static void FocusConnection(Connection connection, bool alsoSelect = false)
+        {
+            if (currentGraph == connection.sourceNode.graph)
+            {
                 FocusPosition(connection.GetMidRect().center);
                 PingRect(connection.GetMidRect());
-                if ( alsoSelect ) { GraphEditorUtility.activeElement = connection; }
+                if (alsoSelect) GraphEditorUtility.activeElement = connection;
             }
         }
 
         ///<summary>Translate the graph to to center of the target pos</summary>
-        public static void FocusPosition(Vector2 targetPos, bool smooth = true) {
-            if ( smooth ) {
+        public static void FocusPosition(Vector2 targetPos, bool smooth = true)
+        {
+            if (smooth)
+            {
                 smoothPan = -targetPos;
                 smoothPan += new Vector2(viewRect.width / 2, viewRect.height / 2);
                 smoothPan *= zoomFactor;
-            } else {
+            }
+            else
+            {
                 pan = -targetPos;
                 pan += new Vector2(viewRect.width / 2, viewRect.height / 2);
                 pan *= zoomFactor;
@@ -728,104 +779,117 @@ namespace NodeCanvas.Editor
         }
 
         ///<summary>Ping rect</summary>
-        public static void PingRect(Rect rect) {
+        public static void PingRect(Rect rect)
+        {
             pingValue = 1;
             pingRect = rect;
         }
 
         ///<summary>Refresh full draw pass flag</summary>
-        public static void FullDrawPass() {
+        public static void FullDrawPass()
+        {
             fullDrawPass = true;
         }
 
         ///<summary>Zoom with center position</summary>
-        static void ZoomAt(Vector2 center, float delta) {
-            if ( zoomFactor == 1 && delta > 0 ) return;
-            var pinPoint = ( center - pan ) / zoomFactor;
+        private static void ZoomAt(Vector2 center, float delta)
+        {
+            if (zoomFactor == 1 && delta > 0) return;
+            var pinPoint = (center - pan) / zoomFactor;
             var newZ = zoomFactor;
             newZ += delta;
             newZ = Mathf.Clamp(newZ, ZOOM_MIN, ZOOM_MAX);
             smoothZoomFactor = newZ;
 
-            var a = ( pinPoint * newZ ) + pan;
+            var a = pinPoint * newZ + pan;
             var b = center;
             var diff = b - a;
             smoothPan = pan + diff;
         }
 
         //Handles D&D operations
-        static void AcceptDrops(Graph graph, Vector2 canvasMousePos) {
-            if ( GraphEditorUtility.allowClick ) {
-                if ( DragAndDrop.objectReferences != null && DragAndDrop.objectReferences.Length == 1 ) {
-                    if ( e.type == EventType.DragUpdated ) {
-                        DragAndDrop.visualMode = DragAndDropVisualMode.Link;
-                    }
-                    if ( e.type == EventType.DragPerform ) {
+        private static void AcceptDrops(Graph graph, Vector2 canvasMousePos)
+        {
+            if (GraphEditorUtility.allowClick)
+                if (DragAndDrop.objectReferences != null && DragAndDrop.objectReferences.Length == 1)
+                {
+                    if (e.type == EventType.DragUpdated) DragAndDrop.visualMode = DragAndDropVisualMode.Link;
+                    if (e.type == EventType.DragPerform)
+                    {
                         var value = DragAndDrop.objectReferences[0];
                         DragAndDrop.AcceptDrag();
                         graph.CallbackOnDropAccepted(value, canvasMousePos);
                     }
                 }
-            }
         }
 
         ///<summary>Gets the bound rect for the nodes</summary>
-        static Rect GetNodeBounds(List<Node> nodes) {
-            if ( nodes == null || nodes.Count == 0 ) {
-                return default(Rect);
-            }
+        private static Rect GetNodeBounds(List<Node> nodes)
+        {
+            if (nodes == null || nodes.Count == 0) return default;
 
             var arr = new Rect[nodes.Count];
-            for ( var i = 0; i < nodes.Count; i++ ) {
-                arr[i] = nodes[i].rect;
-            }
+            for (var i = 0; i < nodes.Count; i++) arr[i] = nodes[i].rect;
             return RectUtils.GetBoundRect(arr);
         }
 
         //Do graphical multi selection box for nodes
-        static void DoCanvasRectSelection() {
-
-            if ( GraphEditorUtility.allowClick && e.type == EventType.MouseDown && e.button == 0 && !e.alt && !e.shift && canvasRect.Contains(CanvasToView(e.mousePosition)) ) {
-                if ( e.clickCount == 1 ) {
+        private static void DoCanvasRectSelection()
+        {
+            if (GraphEditorUtility.allowClick && e.type == EventType.MouseDown && e.button == 0 && !e.alt && !e.shift &&
+                canvasRect.Contains(CanvasToView(e.mousePosition)))
+                if (e.clickCount == 1)
+                {
                     GraphEditorUtility.activeElement = null;
                     selectionStartPos = e.mousePosition;
                     isMultiSelecting = true;
                     e.Use();
                 }
-            }
 
-            if ( isMultiSelecting && e.rawType == EventType.MouseUp ) {
+            if (isMultiSelecting && e.rawType == EventType.MouseUp)
+            {
                 var rect = RectUtils.GetBoundRect(selectionStartPos, e.mousePosition);
                 var overlapedNodes = currentGraph.allNodes.Where(n => rect.Overlaps(n.rect) && !n.isHidden).ToList();
                 isMultiSelecting = false;
-                if ( e.control && rect.width > 50 && rect.height > 50 ) {
+                if (e.control && rect.width > 50 && rect.height > 50)
+                {
                     UndoUtility.RecordObjectComplete(currentGraph, "Create Group");
-                    if ( currentGraph.canvasGroups == null ) { currentGraph.canvasGroups = new List<CanvasGroup>(); }
+                    if (currentGraph.canvasGroups == null) currentGraph.canvasGroups = new List<CanvasGroup>();
                     currentGraph.canvasGroups.Add(new CanvasGroup(rect, "..."));
                     UndoUtility.SetDirty(currentGraph);
-                } else {
-                    if ( overlapedNodes.Count > 0 ) {
+                }
+                else
+                {
+                    if (overlapedNodes.Count > 0)
+                    {
                         GraphEditorUtility.activeElements = overlapedNodes.Cast<IGraphElement>().ToList();
                         e.Use();
                     }
                 }
             }
 
-            if ( isMultiSelecting ) {
+            if (isMultiSelecting)
+            {
                 var rect = RectUtils.GetBoundRect(selectionStartPos, e.mousePosition);
-                if ( rect.width > 5 && rect.height > 5 ) {
+                if (rect.width > 5 && rect.height > 5)
+                {
                     GUI.color = new Color(0.5f, 0.5f, 1, 0.3f);
                     Styles.Draw(rect, StyleSheet.box);
-                    for ( var i = 0; i < currentGraph.allNodes.Count; i++ ) {
+                    for (var i = 0; i < currentGraph.allNodes.Count; i++)
+                    {
                         var node = currentGraph.allNodes[i];
-                        if ( rect.Overlaps(node.rect) && !node.isHidden ) {
+                        if (rect.Overlaps(node.rect) && !node.isHidden)
+                        {
                             var highlightRect = node.rect;
                             Styles.Draw(highlightRect, StyleSheet.windowHighlight);
                         }
                     }
-                    if ( rect.width > 50 && rect.height > 50 ) {
+
+                    if (rect.width > 50 && rect.height > 50)
+                    {
                         GUI.color = new Color(1, 1, 1, e.control ? 0.6f : 0.15f);
-                        GUI.Label(new Rect(e.mousePosition.x + 16, e.mousePosition.y, 120, 22), "<i>+ control for group</i>", StyleSheet.labelOnCanvas);
+                        GUI.Label(new Rect(e.mousePosition.x + 16, e.mousePosition.y, 120, 22),
+                            "<i>+ control for group</i>", StyleSheet.labelOnCanvas);
                     }
                 }
             }
@@ -834,11 +898,11 @@ namespace NodeCanvas.Editor
         }
 
 
-
         //Draw a grid
-        static void DrawGrid(Rect container, Vector2 offset, float zoomFactor) {
-            if ( !Prefs.showGrid ) { return; }
-            if ( Event.current.type != EventType.Repaint ) { return; }
+        private static void DrawGrid(Rect container, Vector2 offset, float zoomFactor)
+        {
+            if (!Prefs.showGrid) return;
+            if (Event.current.type != EventType.Repaint) return;
 
             Handles.color = Color.black.WithAlpha(0.15f);
 
@@ -848,63 +912,68 @@ namespace NodeCanvas.Editor
             var xDiff = offset.x % step;
             var xStart = container.xMin + xDiff;
             var xEnd = container.xMax;
-            for ( var i = xStart; i < xEnd; i += step ) {
-                if ( i > container.xMin ) { //this avoids one step being drawn before x min on negative mod
+            for (var i = xStart; i < xEnd; i += step)
+                if (i > container.xMin) //this avoids one step being drawn before x min on negative mod
                     Handles.DrawLine(new Vector3(i, container.yMin, 0), new Vector3(i, container.yMax, 0));
-                }
-            }
 
             var yDiff = offset.y % step;
             var yStart = container.yMin + yDiff;
             var yEnd = container.yMax;
-            for ( var i = yStart; i < yEnd; i += step ) {
-                if ( i > container.yMin ) { //this avoids one step being drawn before y min on negative mod
+            for (var i = yStart; i < yEnd; i += step)
+                if (i > container.yMin) //this avoids one step being drawn before y min on negative mod
                     Handles.DrawLine(new Vector3(container.xMin, i, 0), new Vector3(container.xMax, i, 0));
-                }
-            }
 
             Handles.color = Color.white;
         }
 
 
         //This is the hierarchy shown at top left. Recusrsively show the nested path
-        static void StartBreadCrumbNavigation(Graph root) {
-            GUILayout.BeginArea(Rect.MinMaxRect(canvasRect.xMin + 15, canvasRect.yMin + 5, canvasRect.xMax, canvasRect.yMax));
+        private static void StartBreadCrumbNavigation(Graph root)
+        {
+            GUILayout.BeginArea(Rect.MinMaxRect(canvasRect.xMin + 15, canvasRect.yMin + 5, canvasRect.xMax,
+                canvasRect.yMax));
             DoBreadCrumbNavigationStep(root);
             GUILayout.EndArea();
         }
 
-        static void DoBreadCrumbNavigationStep(Graph root) {
-            if ( root == null ) { return; }
+        private static void DoBreadCrumbNavigationStep(Graph root)
+        {
+            if (root == null) return;
             //if something selected the inspector panel shows on top of the breadcrub. If external inspector active it doesnt matter, so draw anyway.
-            if ( GraphEditorUtility.activeElement != null && !Prefs.useExternalInspector ) { return; }
+            if (GraphEditorUtility.activeElement != null && !Prefs.useExternalInspector) return;
 
-            var resultInfo = EditorUtility.IsPersistent(root) ? "Asset Reference" : ( Application.isPlaying ? "Instance" : "Bound" );
-            if ( targetOwner != null && EditorUtility.IsPersistent(targetOwner) ) { resultInfo += " | Prefab Asset"; }
+            var resultInfo = EditorUtility.IsPersistent(root) ? "Asset Reference" :
+                Application.isPlaying ? "Instance" : "Bound";
+            if (targetOwner != null && EditorUtility.IsPersistent(targetOwner)) resultInfo += " | Prefab Asset";
             var graphInfo = string.Format("<color=#ff4d4d>({0})</color>", resultInfo);
 
             GUI.color = Color.white.WithAlpha(0.5f);
 
             GUILayout.BeginVertical();
             var childGraph = root.GetCurrentChildGraph();
-            if ( childGraph == null ) {
-
-                if ( root.agent == null && root.blackboard == null ) {
-                    GUILayout.Label(string.Format("<b><size=22>{0} {1}</size></b>", root.name, graphInfo), StyleSheet.labelOnCanvas);
-                } else {
-                    var agentInfo = root.agent != null ? "@" + root.agent.gameObject.name : "No Agent";
-                    GUILayout.Label(string.Format("<b><size=22>{0} {1}</size></b>\n<size=10>{2}</size>", root.name, graphInfo, agentInfo), StyleSheet.labelOnCanvas);
+            if (childGraph == null)
+            {
+                if (root.agent == null && root.blackboard == null)
+                {
+                    GUILayout.Label(string.Format("<b><size=22>{0} {1}</size></b>", root.name, graphInfo),
+                        StyleSheet.labelOnCanvas);
                 }
-
-            } else {
-
+                else
+                {
+                    var agentInfo = root.agent != null ? "@" + root.agent.gameObject.name : "No Agent";
+                    GUILayout.Label(
+                        string.Format("<b><size=22>{0} {1}</size></b>\n<size=10>{2}</size>", root.name, graphInfo,
+                            agentInfo), StyleSheet.labelOnCanvas);
+                }
+            }
+            else
+            {
                 GUILayout.BeginHorizontal();
                 GUILayout.Label("⤴ " + root.name, GUI.skin.button);
                 var lastRect = GUILayoutUtility.GetLastRect();
                 EditorGUIUtility.AddCursorRect(lastRect, MouseCursor.Link);
-                if ( e.type == EventType.MouseUp && lastRect.Contains(Event.current.mousePosition) ) {
+                if (e.type == EventType.MouseUp && lastRect.Contains(Event.current.mousePosition))
                     root.SetCurrentChildGraphAssignable(null);
-                }
                 GUILayout.FlexibleSpace();
                 GUILayout.EndHorizontal();
                 DoBreadCrumbNavigationStep(childGraph);
@@ -916,13 +985,12 @@ namespace NodeCanvas.Editor
 
 
         ///<summary>Canvas groups</summary>
-        static void DoCanvasGroups() {
+        private static void DoCanvasGroups()
+        {
+            if (currentGraph.canvasGroups == null) return;
 
-            if ( currentGraph.canvasGroups == null ) {
-                return;
-            }
-
-            for ( var i = 0; i < currentGraph.canvasGroups.Count; i++ ) {
+            for (var i = 0; i < currentGraph.canvasGroups.Count; i++)
+            {
                 var group = currentGraph.canvasGroups[i];
                 var headerRect = new Rect(group.rect.x, group.rect.y, group.rect.width, 25);
                 var autoRect = new Rect(headerRect.xMax - 68, headerRect.y + 1, 68, headerRect.height);
@@ -931,7 +999,8 @@ namespace NodeCanvas.Editor
                 GUI.color = EditorGUIUtility.isProSkin ? new Color(1, 1, 1, 0.4f) : new Color(0.5f, 0.5f, 0.5f, 0.3f);
                 Styles.Draw(group.rect, StyleSheet.editorPanel);
 
-                if ( group.color != default(Color) ) {
+                if (group.color != default)
+                {
                     GUI.color = group.color;
                     GUI.DrawTexture(group.rect.ExpandBy(2, -27, 2, 0), EditorGUIUtility.whiteTexture);
                 }
@@ -939,56 +1008,77 @@ namespace NodeCanvas.Editor
                 GUI.color = Color.white;
                 GUI.Box(new Rect(scaleRectBR.x + 10, scaleRectBR.y + 10, 6, 6), string.Empty, StyleSheet.scaleArrowBR);
 
-                if ( group.editState != CanvasGroup.EditState.Renaming ) {
+                if (group.editState != CanvasGroup.EditState.Renaming)
+                {
                     var size = StyleSheet.canvasGroupHeader.fontSize / zoomFactor;
                     var name = string.Format("<size={0}><b>{1}</b></size>", size, group.name);
                     GUI.Label(headerRect, name, StyleSheet.canvasGroupHeader);
 
-                    EditorGUIUtility.AddCursorRect(headerRect, group.editState == CanvasGroup.EditState.Renaming ? MouseCursor.Text : MouseCursor.Link);
+                    EditorGUIUtility.AddCursorRect(headerRect,
+                        group.editState == CanvasGroup.EditState.Renaming ? MouseCursor.Text : MouseCursor.Link);
                     EditorGUIUtility.AddCursorRect(scaleRectBR, MouseCursor.ResizeUpLeft);
 
                     GUI.color = GUI.color.WithAlpha(0.25f);
                     var newAutoValue = GUI.Toggle(autoRect, group.autoGroup, "Autosize");
-                    if ( newAutoValue != group.autoGroup ) {
+                    if (newAutoValue != group.autoGroup)
+                    {
                         UndoUtility.RecordObject(currentGraph, "AutoGroup");
                         group.autoGroup = newAutoValue;
                         group.GatherAdjustAndFlushContainedNodes(currentGraph);
                         UndoUtility.SetDirty(currentGraph);
                     }
+
                     GUI.color = Color.white;
                 }
 
-                if ( group.editState == CanvasGroup.EditState.Renaming ) {
+                if (group.editState == CanvasGroup.EditState.Renaming)
+                {
                     GUI.SetNextControlName("GroupRename" + i);
                     group.name = EditorGUI.TextField(headerRect, group.name, StyleSheet.canvasGroupHeader);
                     GUI.FocusControl("GroupRename" + i);
-                    if ( e.keyCode == KeyCode.Return || ( e.type == EventType.MouseDown && !headerRect.Contains(e.mousePosition) ) ) {
+                    if (e.keyCode == KeyCode.Return ||
+                        (e.type == EventType.MouseDown && !headerRect.Contains(e.mousePosition)))
+                    {
                         group.editState = CanvasGroup.EditState.None;
                         GUIUtility.hotControl = 0;
                         GUIUtility.keyboardControl = 0;
                     }
                 }
 
-                if ( e.type == EventType.MouseDown && GraphEditorUtility.allowClick ) {
-
-                    if ( headerRect.Contains(e.mousePosition) ) {
-
+                if (e.type == EventType.MouseDown && GraphEditorUtility.allowClick)
+                {
+                    if (headerRect.Contains(e.mousePosition))
+                    {
                         UndoUtility.RecordObjectComplete(currentGraph, "Move Canvas Group");
 
                         //calc group nodes
-                        tempCanvasGroupNodes = currentGraph.allNodes.Where(n => group.rect.Encapsulates(n.rect)).ToArray();
-                        tempCanvasGroupGroups = currentGraph.canvasGroups.Where(c => group.rect.Encapsulates(c.rect)).ToArray();
+                        tempCanvasGroupNodes =
+                            currentGraph.allNodes.Where(n => group.rect.Encapsulates(n.rect)).ToArray();
+                        tempCanvasGroupGroups = currentGraph.canvasGroups.Where(c => group.rect.Encapsulates(c.rect))
+                            .ToArray();
 
-                        if ( e.button == 1 ) {
+                        if (e.button == 1)
+                        {
                             var menu = new GenericMenu();
-                            menu.AddItem(new GUIContent("Rename"), false, () => { group.editState = CanvasGroup.EditState.Renaming; });
-                            menu.AddItem(new GUIContent("Edit Color"), false, () => { DoPopup(() => { group.color = EditorGUILayout.ColorField(group.color); }); });
-                            menu.AddItem(new GUIContent("Select Nodes"), false, () => { GraphEditorUtility.activeElements = tempCanvasGroupNodes.Cast<IGraphElement>().ToList(); });
-                            menu.AddItem(new GUIContent("Delete Group"), false, () => { currentGraph.canvasGroups.Remove(group); });
+                            menu.AddItem(new GUIContent("Rename"), false,
+                                () => { group.editState = CanvasGroup.EditState.Renaming; });
+                            menu.AddItem(new GUIContent("Edit Color"), false,
+                                () => { DoPopup(() => { group.color = EditorGUILayout.ColorField(group.color); }); });
+                            menu.AddItem(new GUIContent("Select Nodes"), false,
+                                () =>
+                                {
+                                    GraphEditorUtility.activeElements =
+                                        tempCanvasGroupNodes.Cast<IGraphElement>().ToList();
+                                });
+                            menu.AddItem(new GUIContent("Delete Group"), false,
+                                () => { currentGraph.canvasGroups.Remove(group); });
                             GraphEditorUtility.PostGUI += () => { menu.ShowAsContext(); };
-                        } else if ( e.button == 0 ) {
+                        }
+                        else if (e.button == 0)
+                        {
                             group.editState = CanvasGroup.EditState.Dragging;
-                            if ( e.clickCount == 2 ) {
+                            if (e.clickCount == 2)
+                            {
                                 group.editState = CanvasGroup.EditState.Renaming;
                                 GUI.FocusControl("GroupRename" + i);
                             }
@@ -998,7 +1088,8 @@ namespace NodeCanvas.Editor
                         e.Use();
                     }
 
-                    if ( e.button == 0 && scaleRectBR.Contains(e.mousePosition) ) {
+                    if (e.button == 0 && scaleRectBR.Contains(e.mousePosition))
+                    {
                         UndoUtility.RecordObjectComplete(currentGraph, "Scale Canvas Group");
                         group.editState = CanvasGroup.EditState.Scaling;
                         UndoUtility.SetDirty(currentGraph);
@@ -1006,40 +1097,42 @@ namespace NodeCanvas.Editor
                     }
                 }
 
-                if ( e.type == EventType.MouseDrag ) {
-
-                    if ( group.editState == CanvasGroup.EditState.Dragging ) {
-
+                if (e.type == EventType.MouseDrag)
+                {
+                    if (group.editState == CanvasGroup.EditState.Dragging)
+                    {
                         group.rect.position += e.delta;
 
-                        if ( !e.shift ) {
-                            for ( var j = 0; j < tempCanvasGroupNodes.Length; j++ ) {
+                        if (!e.shift)
+                        {
+                            for (var j = 0; j < tempCanvasGroupNodes.Length; j++)
                                 tempCanvasGroupNodes[j].position += e.delta;
-                            }
 
-                            for ( var j = 0; j < tempCanvasGroupGroups.Length; j++ ) {
+                            for (var j = 0; j < tempCanvasGroupGroups.Length; j++)
                                 tempCanvasGroupGroups[j].rect.position += e.delta;
-                            }
                         }
                     }
 
-                    if ( group.editState == CanvasGroup.EditState.Scaling ) {
+                    if (group.editState == CanvasGroup.EditState.Scaling)
+                    {
                         group.rect.xMax = Mathf.Max(e.mousePosition.x + 5, group.rect.xMin + 100);
                         group.rect.yMax = Mathf.Max(e.mousePosition.y + 5, group.rect.yMin + 100);
                     }
                 }
 
-                if ( e.rawType == EventType.MouseUp && group.editState != CanvasGroup.EditState.Renaming ) {
-                    if ( group.editState == CanvasGroup.EditState.Dragging ) {
-                        foreach ( var node in group.GatherContainedNodes(currentGraph) ) {
+                if (e.rawType == EventType.MouseUp && group.editState != CanvasGroup.EditState.Renaming)
+                {
+                    if (group.editState == CanvasGroup.EditState.Dragging)
+                    {
+                        foreach (var node in group.GatherContainedNodes(currentGraph))
                             node.TrySortConnectionsByPositionX();
-                        }
                         group.FlushContainedNodes();
                     }
+
                     //sort groups so that smaller ones show on top of bigger ones
-                    if ( group.editState != CanvasGroup.EditState.None ) {
-                        currentGraph.canvasGroups = currentGraph.canvasGroups.OrderBy(g => -( g.rect.width * g.rect.height )).ToList();
-                    }
+                    if (group.editState != CanvasGroup.EditState.None)
+                        currentGraph.canvasGroups = currentGraph.canvasGroups
+                            .OrderBy(g => -(g.rect.width * g.rect.height)).ToList();
                     group.editState = CanvasGroup.EditState.None;
                     tempCanvasGroupGroups = null;
                     tempCanvasGroupNodes = null;
@@ -1049,40 +1142,44 @@ namespace NodeCanvas.Editor
 
 
         //Snap all nodes either to grid if option enabled
-        static void SnapNodesToGrid(Graph graph) {
-            if ( Prefs.snapToGrid ) {
-                for ( var i = 0; i < graph.allNodes.Count; i++ ) {
+        private static void SnapNodesToGrid(Graph graph)
+        {
+            if (Prefs.snapToGrid)
+                for (var i = 0; i < graph.allNodes.Count; i++)
+                {
                     var node = graph.allNodes[i];
                     var pos = node.position;
                     pos.x = Mathf.Round(pos.x / GRID_SIZE) * GRID_SIZE;
                     pos.y = Mathf.Round(pos.y / GRID_SIZE) * GRID_SIZE;
                     node.position = pos;
                 }
-            }
         }
 
         //before nodes for handling events
-        static void HandleMinimapEvents(Rect container) {
-
-            if ( !GraphEditorUtility.allowClick ) { return; }
+        private static void HandleMinimapEvents(Rect container)
+        {
+            if (!GraphEditorUtility.allowClick) return;
 
             var resizeRect = new Rect(container.x, container.y, 6, 6);
             EditorGUIUtility.AddCursorRect(resizeRect, MouseCursor.ResizeUpLeft);
-            if ( e.type == EventType.MouseDown && e.button == 0 && resizeRect.Contains(e.mousePosition) ) {
+            if (e.type == EventType.MouseDown && e.button == 0 && resizeRect.Contains(e.mousePosition))
+            {
                 isResizingMinimap = true;
                 e.Use();
             }
-            if ( e.rawType == EventType.MouseUp ) {
-                isResizingMinimap = false;
-            }
-            if ( isResizingMinimap && e.type == EventType.MouseDrag ) {
+
+            if (e.rawType == EventType.MouseUp) isResizingMinimap = false;
+            if (isResizingMinimap && e.type == EventType.MouseDrag)
+            {
                 Prefs.minimapSize -= e.delta.y;
                 e.Use();
             }
 
-            if ( Prefs.minimapSize != Prefs.MINIMAP_MIN_SIZE ) {
+            if (Prefs.minimapSize != Prefs.MINIMAP_MIN_SIZE)
+            {
                 EditorGUIUtility.AddCursorRect(container, MouseCursor.MoveArrow);
-                if ( e.type == EventType.MouseDown && e.button == 0 && container.Contains(e.mousePosition) ) {
+                if (e.type == EventType.MouseDown && e.button == 0 && container.Contains(e.mousePosition))
+                {
                     var finalBound = ResolveMinimapBoundRect(currentGraph, viewRect);
                     var norm = Rect.PointToNormalized(container, e.mousePosition);
                     var pos = Rect.NormalizedToPoint(finalBound, norm);
@@ -1090,10 +1187,10 @@ namespace NodeCanvas.Editor
                     isDraggingMinimap = true;
                     e.Use();
                 }
-                if ( e.rawType == EventType.MouseUp ) {
-                    isDraggingMinimap = false;
-                }
-                if ( isDraggingMinimap && e.type == EventType.MouseDrag ) {
+
+                if (e.rawType == EventType.MouseUp) isDraggingMinimap = false;
+                if (isDraggingMinimap && e.type == EventType.MouseDrag)
+                {
                     var finalBound = ResolveMinimapBoundRect(currentGraph, viewRect);
                     var norm = Rect.PointToNormalized(container, e.mousePosition);
                     var pos = Rect.NormalizedToPoint(finalBound, norm);
@@ -1104,14 +1201,14 @@ namespace NodeCanvas.Editor
         }
 
         ///<summary>after nodes, a cool minimap</summary>
-        static void DrawMinimap(Rect container) {
-
+        private static void DrawMinimap(Rect container)
+        {
             GUI.color = Colors.Grey(0.5f).WithAlpha(0.85f);
             Styles.Draw(container, StyleSheet.windowShadow);
             GUI.Box(container, currentGraph.allNodes.Count > 0 ? string.Empty : "Minimap", StyleSheet.box);
 
-            if ( Prefs.minimapSize != Prefs.MINIMAP_MIN_SIZE ) {
-
+            if (Prefs.minimapSize != Prefs.MINIMAP_MIN_SIZE)
+            {
                 var finalBound = ResolveMinimapBoundRect(currentGraph, viewRect);
                 var lensRect = viewRect.TransformSpace(finalBound, container);
                 GUI.color = new Color(1, 1, 1, 0.8f);
@@ -1120,25 +1217,27 @@ namespace NodeCanvas.Editor
                 finalBound = finalBound.ExpandBy(25);
 
                 //repaint only
-                if ( Event.current.type == EventType.Repaint ) {
-
+                if (Event.current.type == EventType.Repaint)
+                {
                     //groups
-                    if ( currentGraph.canvasGroups != null ) {
-                        for ( var i = 0; i < currentGraph.canvasGroups.Count; i++ ) {
+                    if (currentGraph.canvasGroups != null)
+                        for (var i = 0; i < currentGraph.canvasGroups.Count; i++)
+                        {
                             var group = currentGraph.canvasGroups[i];
                             var blipRect = group.rect.TransformSpace(finalBound, container);
-                            var blipHeaderRect = Rect.MinMaxRect(blipRect.xMin, blipRect.yMin, blipRect.xMax, blipRect.yMin + 2);
-                            var color = group.color != default(Color) ? group.color : Color.gray;
+                            var blipHeaderRect = Rect.MinMaxRect(blipRect.xMin, blipRect.yMin, blipRect.xMax,
+                                blipRect.yMin + 2);
+                            var color = group.color != default ? group.color : Color.gray;
                             color.a = 0.5f;
                             GUI.color = color;
                             GUI.DrawTexture(blipRect, Texture2D.whiteTexture);
                             GUI.DrawTexture(blipHeaderRect, Texture2D.whiteTexture);
                             GUI.color = Color.white;
                         }
-                    }
 
                     //ping
-                    if ( pingValue >= 0 ) {
+                    if (pingValue >= 0)
+                    {
                         GUI.color = Color.white.WithAlpha(pingValue);
                         var pingBlipRect = pingRect.TransformSpace(finalBound, container);
                         GUI.DrawTexture(pingBlipRect.ExpandBy(2), Texture2D.whiteTexture);
@@ -1146,40 +1245,46 @@ namespace NodeCanvas.Editor
                     }
 
 
-                    if ( currentGraph.allNodes != null ) {
-
+                    if (currentGraph.allNodes != null)
+                    {
                         //connections
-                        for ( var i = 0; i < currentGraph.allNodes.Count; i++ ) {
-                            for ( var j = 0; j < currentGraph.allNodes[i].outConnections.Count; j++ ) {
-                                var connection = currentGraph.allNodes[i].outConnections[j];
-                                if ( connection.targetNode.isHidden ) { continue; }
-                                var snp = connection.sourceNode.rect.center.TransformSpace(finalBound, container);
-                                var tnp = connection.targetNode.rect.center.TransformSpace(finalBound, container);
-                                var sp = connection.startRect.center.TransformSpace(finalBound, container);
-                                var tp = connection.endRect.center.TransformSpace(finalBound, container);
-                                Handles.color = Application.isPlaying ? StyleSheet.GetStatusColor(connection.status) : Colors.Grey(0.35f);
-                                Handles.DrawAAPolyLine(snp, sp, tp, tnp);
-                                Handles.color = Color.white;
-                            }
+                        for (var i = 0; i < currentGraph.allNodes.Count; i++)
+                        for (var j = 0; j < currentGraph.allNodes[i].outConnections.Count; j++)
+                        {
+                            var connection = currentGraph.allNodes[i].outConnections[j];
+                            if (connection.targetNode.isHidden) continue;
+                            var snp = connection.sourceNode.rect.center.TransformSpace(finalBound, container);
+                            var tnp = connection.targetNode.rect.center.TransformSpace(finalBound, container);
+                            var sp = connection.startRect.center.TransformSpace(finalBound, container);
+                            var tp = connection.endRect.center.TransformSpace(finalBound, container);
+                            Handles.color = Application.isPlaying
+                                ? StyleSheet.GetStatusColor(connection.status)
+                                : Colors.Grey(0.35f);
+                            Handles.DrawAAPolyLine(snp, sp, tp, tnp);
+                            Handles.color = Color.white;
                         }
 
                         //nodes
-                        for ( var i = 0; i < currentGraph.allNodes.Count; i++ ) {
+                        for (var i = 0; i < currentGraph.allNodes.Count; i++)
+                        {
                             var node = currentGraph.allNodes[i];
-                            if ( node.isHidden ) { continue; }
+                            if (node.isHidden) continue;
                             var blipRect = node.rect.TransformSpace(finalBound, container);
 
-                            if ( Application.isPlaying && node.status != Status.Resting ) {
+                            if (Application.isPlaying && node.status != Status.Resting)
+                            {
                                 GUI.color = StyleSheet.GetStatusColor(node.status);
                                 GUI.DrawTexture(blipRect.ExpandBy(2), Texture2D.whiteTexture);
                             }
 
-                            if ( GraphEditorUtility.activeElement == node || GraphEditorUtility.activeElements.Contains(node) ) {
+                            if (GraphEditorUtility.activeElement == node ||
+                                GraphEditorUtility.activeElements.Contains(node))
+                            {
                                 GUI.color = Color.white;
                                 GUI.DrawTexture(blipRect.ExpandBy(2), Texture2D.whiteTexture);
                             }
 
-                            GUI.color = node.nodeColor != default(Color) ? node.nodeColor : Color.grey;
+                            GUI.color = node.nodeColor != default ? node.nodeColor : Color.grey;
                             GUI.DrawTexture(blipRect, Texture2D.whiteTexture);
                             GUI.color = Color.white;
                         }
@@ -1193,21 +1298,18 @@ namespace NodeCanvas.Editor
         }
 
         //resolves the bounds used in the minimap
-        static Rect ResolveMinimapBoundRect(Graph graph, Rect container) {
-
+        private static Rect ResolveMinimapBoundRect(Graph graph, Rect container)
+        {
             var arr1 = new Rect[graph.allNodes.Count];
-            for ( var i = 0; i < graph.allNodes.Count; i++ ) {
-                arr1[i] = graph.allNodes[i].rect;
-            }
+            for (var i = 0; i < graph.allNodes.Count; i++) arr1[i] = graph.allNodes[i].rect;
 
             var nBounds = RectUtils.GetBoundRect(arr1);
             var finalBound = nBounds;
 
-            if ( graph.canvasGroups != null && graph.canvasGroups.Count > 0 ) {
+            if (graph.canvasGroups != null && graph.canvasGroups.Count > 0)
+            {
                 var arr2 = new Rect[graph.canvasGroups.Count];
-                for ( var i = 0; i < graph.canvasGroups.Count; i++ ) {
-                    arr2[i] = graph.canvasGroups[i].rect;
-                }
+                for (var i = 0; i < graph.canvasGroups.Count; i++) arr2[i] = graph.canvasGroups[i].rect;
                 var gBounds = RectUtils.GetBoundRect(arr2);
                 finalBound = RectUtils.GetBoundRect(nBounds, gBounds);
             }
@@ -1217,8 +1319,10 @@ namespace NodeCanvas.Editor
         }
 
         //
-        void DrawPings() {
-            if ( pingValue > 0 ) {
+        private void DrawPings()
+        {
+            if (pingValue > 0)
+            {
                 GUI.color = Color.white.WithAlpha(pingValue);
                 Styles.Draw(pingRect, Styles.highlightBox);
                 GUI.color = Color.white;
@@ -1226,8 +1330,9 @@ namespace NodeCanvas.Editor
         }
 
         //Playmode gui
-        void ShowPlaymodeGUI() {
-            if ( !Application.isPlaying || targetOwner == null ) { return; }
+        private void ShowPlaymodeGUI()
+        {
+            if (!Application.isPlaying || targetOwner == null) return;
 
             var bWidth = 96;
             var bHeight = 22;
@@ -1247,63 +1352,87 @@ namespace NodeCanvas.Editor
 
             GUI.color = Colors.Grey(0.2f);
             GUI.DrawTexture(buttonsRect.ExpandBy(5), Texture2D.whiteTexture);
-            var labelRect = Rect.MinMaxRect(buttonsRect.xMin - 20, buttonsRect.yMin - 40, buttonsRect.xMax + 20, buttonsRect.yMin - 6);
-            var runLabelRoot = string.Format("<color=#FFEB04><b>Runtime: {0}</b></color>", targetOwner.elapsedTime.ToString("0.00"));
-            var runLabelCurrent = string.Format("<color=#FFEB04><b>({0})</b></color>", currentGraph.elapsedTime.ToString("0.00"));
+            var labelRect = Rect.MinMaxRect(buttonsRect.xMin - 20, buttonsRect.yMin - 40, buttonsRect.xMax + 20,
+                buttonsRect.yMin - 6);
+            var runLabelRoot = string.Format("<color=#FFEB04><b>Runtime: {0}</b></color>",
+                targetOwner.elapsedTime.ToString("0.00"));
+            var runLabelCurrent = string.Format("<color=#FFEB04><b>({0})</b></color>",
+                currentGraph.elapsedTime.ToString("0.00"));
             var runLabelFinal = rootGraph != currentGraph ? runLabelCurrent + '\n' + runLabelRoot : runLabelRoot;
             GUI.Label(labelRect, runLabelFinal, Styles.bottomCenterLabel);
 
             GUI.color = Color.white;
 
             var buttonWidth = buttonsRect.width / 3f;
-            var playRect = Rect.MinMaxRect(buttonsRect.xMin, buttonsRect.yMin, buttonsRect.xMin + buttonWidth, buttonsRect.yMax);
-            var pauseRect = Rect.MinMaxRect(playRect.xMax, buttonsRect.yMin, playRect.xMax + buttonWidth, buttonsRect.yMax);
-            var stepRect = Rect.MinMaxRect(pauseRect.xMax, buttonsRect.yMin, pauseRect.xMax + buttonWidth, buttonsRect.yMax);
+            var playRect = Rect.MinMaxRect(buttonsRect.xMin, buttonsRect.yMin, buttonsRect.xMin + buttonWidth,
+                buttonsRect.yMax);
+            var pauseRect = Rect.MinMaxRect(playRect.xMax, buttonsRect.yMin, playRect.xMax + buttonWidth,
+                buttonsRect.yMax);
+            var stepRect = Rect.MinMaxRect(pauseRect.xMax, buttonsRect.yMin, pauseRect.xMax + buttonWidth,
+                buttonsRect.yMax);
 
             GUI.contentColor = EditorGUIUtility.isProSkin ? Color.white : Colors.Grey(0.3f);
             GUI.color = Colors.Grey(targetOwner.isRunning ? 1f : 0.7f);
-            if ( GUI.Button(playRect, Icons.playIcon, Styles.buttonLeft) ) {
-                if ( targetOwner.isRunning ) { targetOwner.StopBehaviour(); } else { targetOwner.StartBehaviour(); }
+            if (GUI.Button(playRect, Icons.playIcon, Styles.buttonLeft))
+            {
+                if (targetOwner.isRunning)
+                    targetOwner.StopBehaviour();
+                else
+                    targetOwner.StartBehaviour();
                 Event.current.Use();
             }
 
             GUI.color = Colors.Grey(targetOwner.isPaused ? 1f : 0.7f);
-            if ( GUI.Button(pauseRect, Icons.pauseIcon, Styles.buttonMid) ) {
-                if ( targetOwner.isPaused ) { targetOwner.StartBehaviour(); } else { targetOwner.PauseBehaviour(); }
+            if (GUI.Button(pauseRect, Icons.pauseIcon, Styles.buttonMid))
+            {
+                if (targetOwner.isPaused)
+                    targetOwner.StartBehaviour();
+                else
+                    targetOwner.PauseBehaviour();
                 Event.current.Use();
             }
 
             GUI.color = Colors.Grey(0.7f);
-            if ( GUI.Button(stepRect, Icons.stepIcon, Styles.buttonRight) ) {
-                targetOwner.PauseBehaviour(); targetOwner.UpdateBehaviour();
+            if (GUI.Button(stepRect, Icons.stepIcon, Styles.buttonRight))
+            {
+                targetOwner.PauseBehaviour();
+                targetOwner.UpdateBehaviour();
                 Event.current.Use();
             }
+
             GUI.contentColor = Color.white;
             GUI.color = Color.white;
         }
 
         //an idea but it's taking up space i dont like
-        void ShowConsoleLog() {
+        private void ShowConsoleLog()
+        {
             var rect = Rect.MinMaxRect(canvasRect.xMin + 2, canvasRect.yMax + 5, canvasRect.xMax, canvasRect.yMax + 20);
             var msg = GraphConsole.GetLastMessageForGraph(currentGraph);
-            if ( msg.IsValid() ) {
+            if (msg.IsValid())
+            {
                 EditorGUIUtility.AddCursorRect(rect, MouseCursor.Link);
-                if ( GUI.Button(rect, GraphConsole.GetFormatedGUIContentForMessage(msg), StyleSheet.labelOnCanvas) ) {
+                if (GUI.Button(rect, GraphConsole.GetFormatedGUIContentForMessage(msg), StyleSheet.labelOnCanvas))
                     GraphConsole.ShowWindow();
-                }
             }
         }
 
         //this is shown when root graph is null
         //TODO: Add something like a menu to create graphs from here?
-        void ShowEmptyGraphGUI() {
-            if ( targetOwner != null ) {
-                var text = string.Format("The selected {0} does not have a {1} assigned.\n Please create or assign a new one in it's inspector.", targetOwner.GetType().Name, targetOwner.graphType.Name);
+        private void ShowEmptyGraphGUI()
+        {
+            if (targetOwner != null)
+            {
+                var text = string.Format(
+                    "The selected {0} does not have a {1} assigned.\n Please create or assign a new one in it's inspector.",
+                    targetOwner.GetType().Name, targetOwner.graphType.Name);
                 ShowNotification(new GUIContent(text));
                 return;
             }
+
             ShowNotification(new GUIContent("Please select a GraphOwner GameObject or a Graph Asset."));
-            if ( Event.current.type == EventType.MouseDown && Event.current.clickCount == 2 && Event.current.button == 0 ) {
+            if (Event.current.type == EventType.MouseDown && Event.current.clickCount == 2 && Event.current.button == 0)
+            {
                 current.maximized = !current.maximized;
                 Event.current.Use();
             }

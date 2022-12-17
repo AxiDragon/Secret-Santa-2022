@@ -1,65 +1,71 @@
-﻿using NodeCanvas.Framework;
+﻿using System;
+using NodeCanvas.Editor;
+using NodeCanvas.Framework;
 using ParadoxNotion;
+using UnityEditor;
 using UnityEngine;
 
 namespace NodeCanvas.StateMachines
 {
-
-
     ///<summary> Super base class for FSM nodes that live within an FSM Graph.</summary>
     public abstract class FSMNode : Node
     {
-
-        public override bool allowAsPrime { get { return false; } }
-        public override bool canSelfConnect { get { return false; } }
-        public override int maxInConnections { get { return -1; } }
-        public override int maxOutConnections { get { return -1; } }
-        sealed public override System.Type outConnectionType { get { return typeof(FSMConnection); } }
-        sealed public override Alignment2x2 commentsAlignment { get { return Alignment2x2.Bottom; } }
-        sealed public override Alignment2x2 iconAlignment { get { return Alignment2x2.Bottom; } }
+        public override bool allowAsPrime => false;
+        public override bool canSelfConnect => false;
+        public override int maxInConnections => -1;
+        public override int maxOutConnections => -1;
+        public sealed override Type outConnectionType => typeof(FSMConnection);
+        public sealed override Alignment2x2 commentsAlignment => Alignment2x2.Bottom;
+        public sealed override Alignment2x2 iconAlignment => Alignment2x2.Bottom;
 
         ///<summary>The FSM this state belongs to</summary>
-        public FSM FSM { get { return (FSM)graph; } }
+        public FSM FSM => (FSM)graph;
 
 
-        ///----------------------------------------------------------------------------------------------
-        ///---------------------------------------UNITY EDITOR-------------------------------------------
+        /// ----------------------------------------------------------------------------------------------
+        /// ---------------------------------------UNITY EDITOR-------------------------------------------
 #if UNITY_EDITOR
 
         private static GUIPort clickedPort { get; set; }
+
         private static int dragDropMisses { get; set; }
 
-        class GUIPort
+        private class GUIPort
         {
-            public FSMNode parent { get; private set; }
-            public Vector2 pos { get; private set; }
-            public GUIPort(FSMNode parent, Vector2 pos) {
+            public GUIPort(FSMNode parent, Vector2 pos)
+            {
                 this.parent = parent;
                 this.pos = pos;
             }
+
+            public FSMNode parent { get; }
+            public Vector2 pos { get; }
         }
 
         //Draw the ports and connections
-        sealed protected override void DrawNodeConnections(Rect drawCanvas, bool fullDrawPass, Vector2 canvasMousePos, float zoomFactor) {
-
+        protected sealed override void DrawNodeConnections(Rect drawCanvas, bool fullDrawPass, Vector2 canvasMousePos,
+            float zoomFactor)
+        {
             var e = Event.current;
 
             //Receive connections first
-            if ( clickedPort != null && e.type == EventType.MouseUp && e.button == 0 ) {
-
-                if ( rect.Contains(e.mousePosition) ) {
+            if (clickedPort != null && e.type == EventType.MouseUp && e.button == 0)
+            {
+                if (rect.Contains(e.mousePosition))
+                {
                     graph.ConnectNodes(clickedPort.parent, this);
                     clickedPort = null;
                     e.Use();
-
-                } else {
-
+                }
+                else
+                {
                     dragDropMisses++;
 
-                    if ( dragDropMisses == graph.allNodes.Count && clickedPort != null ) {
+                    if (dragDropMisses == graph.allNodes.Count && clickedPort != null)
+                    {
                         var source = clickedPort.parent;
                         var pos = Event.current.mousePosition;
-                        var menu = new UnityEditor.GenericMenu();
+                        var menu = new GenericMenu();
                         clickedPort = null;
 
                         menu.AddItem(new GUIContent("Add Action State"), false, () =>
@@ -69,7 +75,7 @@ namespace NodeCanvas.StateMachines
                         });
 
                         //PostGUI cause of zoom factors
-                        Editor.GraphEditorUtility.PostGUI += () => { menu.ShowAsContext(); };
+                        GraphEditorUtility.PostGUI += () => { menu.ShowAsContext(); };
                         Event.current.Use();
                         e.Use();
                     }
@@ -84,103 +90,95 @@ namespace NodeCanvas.StateMachines
             portRectRight.center = new Vector2(rect.xMax + 11, rect.center.y);
             portRectBottom.center = new Vector2(rect.center.x, rect.yMax + 11);
 
-            if ( maxOutConnections != 0 ) {
-                if ( fullDrawPass || drawCanvas.Overlaps(rect) ) {
-                    UnityEditor.EditorGUIUtility.AddCursorRect(portRectLeft, UnityEditor.MouseCursor.ArrowPlus);
-                    UnityEditor.EditorGUIUtility.AddCursorRect(portRectRight, UnityEditor.MouseCursor.ArrowPlus);
-                    UnityEditor.EditorGUIUtility.AddCursorRect(portRectBottom, UnityEditor.MouseCursor.ArrowPlus);
+            if (maxOutConnections != 0)
+                if (fullDrawPass || drawCanvas.Overlaps(rect))
+                {
+                    EditorGUIUtility.AddCursorRect(portRectLeft, MouseCursor.ArrowPlus);
+                    EditorGUIUtility.AddCursorRect(portRectRight, MouseCursor.ArrowPlus);
+                    EditorGUIUtility.AddCursorRect(portRectBottom, MouseCursor.ArrowPlus);
 
                     GUI.color = new Color(1, 1, 1, 0.3f);
-                    GUI.DrawTexture(portRectLeft, Editor.StyleSheet.arrowLeft);
-                    GUI.DrawTexture(portRectRight, Editor.StyleSheet.arrowRight);
-                    if ( maxInConnections == 0 ) {
-                        GUI.DrawTexture(portRectBottom, Editor.StyleSheet.arrowBottom);
-                    }
+                    GUI.DrawTexture(portRectLeft, StyleSheet.arrowLeft);
+                    GUI.DrawTexture(portRectRight, StyleSheet.arrowRight);
+                    if (maxInConnections == 0) GUI.DrawTexture(portRectBottom, StyleSheet.arrowBottom);
                     GUI.color = Color.white;
 
-                    if ( Editor.GraphEditorUtility.allowClick && e.type == EventType.MouseDown && e.button == 0 ) {
-
-                        if ( portRectLeft.Contains(e.mousePosition) ) {
+                    if (GraphEditorUtility.allowClick && e.type == EventType.MouseDown && e.button == 0)
+                    {
+                        if (portRectLeft.Contains(e.mousePosition))
+                        {
                             clickedPort = new GUIPort(this, portRectLeft.center);
                             dragDropMisses = 0;
                             e.Use();
                         }
 
-                        if ( portRectRight.Contains(e.mousePosition) ) {
+                        if (portRectRight.Contains(e.mousePosition))
+                        {
                             clickedPort = new GUIPort(this, portRectRight.center);
                             dragDropMisses = 0;
                             e.Use();
                         }
 
-                        if ( maxInConnections == 0 && portRectBottom.Contains(e.mousePosition) ) {
+                        if (maxInConnections == 0 && portRectBottom.Contains(e.mousePosition))
+                        {
                             clickedPort = new GUIPort(this, portRectBottom.center);
                             dragDropMisses = 0;
                             e.Use();
                         }
                     }
                 }
-            }
 
             //draw new linking
-            if ( clickedPort != null && clickedPort.parent == this ) {
-                UnityEditor.Handles.DrawBezier(clickedPort.pos, e.mousePosition, clickedPort.pos, e.mousePosition, new Color(0.5f, 0.5f, 0.8f, 0.8f), Editor.StyleSheet.bezierTexture, 2);
-            }
+            if (clickedPort != null && clickedPort.parent == this)
+                Handles.DrawBezier(clickedPort.pos, e.mousePosition, clickedPort.pos, e.mousePosition,
+                    new Color(0.5f, 0.5f, 0.8f, 0.8f), StyleSheet.bezierTexture, 2);
 
             //draw out connections
-            for ( var i = 0; i < outConnections.Count; i++ ) {
-
+            for (var i = 0; i < outConnections.Count; i++)
+            {
                 var connection = outConnections[i] as FSMConnection;
                 var targetState = connection.targetNode as FSMNode;
-                if ( targetState == null ) { //In case of MissingNode type
+                if (targetState == null) //In case of MissingNode type
                     continue;
-                }
 
                 var targetPos = targetState.GetConnectedInPortPosition(connection);
                 var sourcePos = Vector2.zero;
 
-                if ( rect.center.x <= targetPos.x ) {
-                    sourcePos = portRectRight.center;
-                }
+                if (rect.center.x <= targetPos.x) sourcePos = portRectRight.center;
 
-                if ( rect.center.x > targetPos.x ) {
-                    sourcePos = portRectLeft.center;
-                }
+                if (rect.center.x > targetPos.x) sourcePos = portRectLeft.center;
 
-                if ( maxInConnections == 0 && rect.center.y < targetPos.y - 50 && Mathf.Abs(rect.center.x - targetPos.x) < 200 ) {
-                    sourcePos = portRectBottom.center;
-                }
+                if (maxInConnections == 0 && rect.center.y < targetPos.y - 50 &&
+                    Mathf.Abs(rect.center.x - targetPos.x) < 200) sourcePos = portRectBottom.center;
 
                 var boundRect = RectUtils.GetBoundRect(sourcePos, targetPos);
-                if ( fullDrawPass || drawCanvas.Overlaps(boundRect) ) {
-                    connection.DrawConnectionGUI(sourcePos, targetPos);
-                }
+                if (fullDrawPass || drawCanvas.Overlaps(boundRect)) connection.DrawConnectionGUI(sourcePos, targetPos);
             }
         }
 
 
         //...
-        Vector2 GetConnectedInPortPosition(Connection connection) {
-
+        private Vector2 GetConnectedInPortPosition(Connection connection)
+        {
             var sourcePos = connection.sourceNode.rect.center;
             var thisPos = rect.center;
 
             var style = 0;
 
-            if ( style == 0 ) {
-                if ( sourcePos.x <= thisPos.x ) {
-                    if ( sourcePos.y <= thisPos.y ) {
-                        return new Vector2(rect.center.x - 15, rect.yMin - ( this == graph.primeNode ? 20 : 0 ));
-                    } else {
-                        return new Vector2(rect.center.x - 15, rect.yMax + 2);
-                    }
+            if (style == 0)
+            {
+                if (sourcePos.x <= thisPos.x)
+                {
+                    if (sourcePos.y <= thisPos.y)
+                        return new Vector2(rect.center.x - 15, rect.yMin - (this == graph.primeNode ? 20 : 0));
+                    return new Vector2(rect.center.x - 15, rect.yMax + 2);
                 }
 
-                if ( sourcePos.x > thisPos.x ) {
-                    if ( sourcePos.y <= thisPos.y ) {
-                        return new Vector2(rect.center.x + 15, rect.yMin - ( this == graph.primeNode ? 20 : 0 ));
-                    } else {
-                        return new Vector2(rect.center.x + 15, rect.yMax + 2);
-                    }
+                if (sourcePos.x > thisPos.x)
+                {
+                    if (sourcePos.y <= thisPos.y)
+                        return new Vector2(rect.center.x + 15, rect.yMin - (this == graph.primeNode ? 20 : 0));
+                    return new Vector2(rect.center.x + 15, rect.yMax + 2);
                 }
             }
 
@@ -225,6 +223,5 @@ namespace NodeCanvas.StateMachines
 
 
 #endif
-
     }
 }

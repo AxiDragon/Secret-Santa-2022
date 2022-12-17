@@ -6,12 +6,12 @@ namespace FIMSpace.FTools
 {
     public abstract class FMuscle_Motor
     {
-        public float OutValue { get; protected set; }
-
-        protected float proceduralValue = 0f;
+        protected float accelerationSign;
         protected float dampingAcceleration;
         protected float dynamicAcceleration;
-        protected float accelerationSign;
+
+        protected float proceduralValue;
+        public float OutValue { get; protected set; }
 
         public bool IsWorking()
         {
@@ -19,7 +19,10 @@ namespace FIMSpace.FTools
         }
 
         /// <summary> Value should be high (500f to 10000f) </summary>
-        public void Push(float value) { dynamicAcceleration += value; }
+        public void Push(float value)
+        {
+            dynamicAcceleration += value;
+        }
 
         public void Initialize(float initValue)
         {
@@ -32,40 +35,48 @@ namespace FIMSpace.FTools
 
         protected abstract float GetDiff(float current, float desired);
 
-        public void Update(float delta, float current, float desired, float acceleration, float accelerationLimit, float damping, float brakePower)
+        public void Update(float delta, float current, float desired, float acceleration, float accelerationLimit,
+            float damping, float brakePower)
         {
-            float towards = GetDiff(current, desired);
+            var towards = GetDiff(current, desired);
             accelerationSign = Mathf.Sign(towards);
 
             // Linear fitting
             dampingAcceleration = towards;
             dampingAcceleration = Mathf.Clamp(dampingAcceleration, -damping, damping) * damping;
 
-            float incr = dampingAcceleration * delta;
+            var incr = dampingAcceleration * delta;
 
-            if (towards > 0f) { if (incr > towards) incr = towards; } else { if (incr < towards) incr = towards; }
+            if (towards > 0f)
+            {
+                if (incr > towards) incr = towards;
+            }
+            else
+            {
+                if (incr < towards) incr = towards;
+            }
+
             proceduralValue += incr;
 
             // Conditions for acceleration
-            float mul = 1f;
+            var mul = 1f;
             if (Mathf.Sign(dynamicAcceleration) != accelerationSign)
-            {
                 mul = 1f + Mathf.Abs(towards) / ((1f - brakePower) * 10f + 8f);
-            }
 
             // Difference towards target
-            float difference = towards;
+            var difference = towards;
             if (difference < 0f) difference = -difference;
 
             // Braking when near
-            float brakeFactor = 5f + (1f - brakePower) * 85f;
+            var brakeFactor = 5f + (1f - brakePower) * 85f;
             if (difference < brakeFactor) mul *= Mathf.Min(1f, difference / brakeFactor);
             if (mul < 0f) mul = -mul;
 
             // Acceleration fitting
             if (delta > 0.04f) delta = 0.04f;
             dynamicAcceleration += acceleration * accelerationSign * delta * mul; // Increase acceleration
-            dynamicAcceleration = Mathf.Clamp(dynamicAcceleration, -accelerationLimit, accelerationLimit); // Limit acceleration
+            dynamicAcceleration =
+                Mathf.Clamp(dynamicAcceleration, -accelerationLimit, accelerationLimit); // Limit acceleration
             if (dynamicAcceleration < 0.000005f && dynamicAcceleration > -0.000005f) dynamicAcceleration = 0f;
 
             proceduralValue += dynamicAcceleration * delta;
@@ -94,7 +105,6 @@ namespace FIMSpace.FTools
 
     public class FMuscle_Angle : FMuscle_Motor
     {
-
         protected override float GetDiff(float current, float desired)
         {
             return Mathf.DeltaAngle(current, desired);
@@ -102,16 +112,22 @@ namespace FIMSpace.FTools
     }
 
 
-    [System.Serializable]
+    [Serializable]
     public class FMuscle_Vector3
     {
         [HideInInspector] public Vector3 DesiredPosition;
-        public Vector3 ProceduralPosition { get; private set; }
-        public bool Initialized { get; private set; }
+
+
+        [FPD_Suffix(0f, 10000)] public float Acceleration = 10000f;
+        [FPD_Suffix(0f, 10000)] public float AccelerationLimit = 5000f;
+        [FPD_Suffix(0f, 50f)] public float Damping = 10f;
+        [FPD_Suffix(0f, 1f)] public float BrakePower = 0.2f;
 
         private FMuscle_Float x;
         private FMuscle_Float y;
         private FMuscle_Float z;
+        public Vector3 ProceduralPosition { get; private set; }
+        public bool Initialized { get; private set; }
 
         public void Initialize(Vector3 initPosition)
         {
@@ -161,7 +177,8 @@ namespace FIMSpace.FTools
             ProceduralPosition += offset;
         }
 
-        public void Update(float delta, Vector3 desired, float acceleration, float accelerationLimit, float damping, float brakePower)
+        public void Update(float delta, Vector3 desired, float acceleration, float accelerationLimit, float damping,
+            float brakePower)
         {
             x.Update(delta, ProceduralPosition.x, desired.x, acceleration, accelerationLimit, damping, brakePower);
             y.Update(delta, ProceduralPosition.y, desired.y, acceleration, accelerationLimit, damping, brakePower);
@@ -170,11 +187,6 @@ namespace FIMSpace.FTools
             ProceduralPosition = new Vector3(x.OutValue, y.OutValue, z.OutValue);
         }
 
-
-        [FPD_Suffix(0f, 10000)] public float Acceleration = 10000f;
-        [FPD_Suffix(0f, 10000)] public float AccelerationLimit = 5000f;
-        [FPD_Suffix(0f, 50f)] public float Damping = 10f;
-        [FPD_Suffix(0f, 1f)] public float BrakePower = 0.2f;
         public Vector3 Update(float delta, Vector3 desired)
         {
             x.Update(delta, ProceduralPosition.x, desired.x, Acceleration, AccelerationLimit, Damping, BrakePower);
@@ -186,22 +198,22 @@ namespace FIMSpace.FTools
         }
 
         /// <summary>
-        /// Adding push force to vector
+        ///     Adding push force to vector
         /// </summary>
-        public IEnumerator PushImpulseCoroutine(Vector3 power, float duration, bool fadeOutPower = false, float delay = 0f)
+        public IEnumerator PushImpulseCoroutine(Vector3 power, float duration, bool fadeOutPower = false,
+            float delay = 0f)
         {
             if (delay > 0f) yield return new WaitForSeconds(delay);
 
-            float elapsed = 0f;
+            var elapsed = 0f;
             Push(0.0001f);
             while (elapsed / duration < 1f)
             {
-                if (!fadeOutPower) Push(power * Time.deltaTime * 60f); else Push(power * (1f - elapsed / duration) * Time.deltaTime * 60f);
+                if (!fadeOutPower) Push(power * Time.deltaTime * 60f);
+                else Push(power * (1f - elapsed / duration) * Time.deltaTime * 60f);
                 elapsed += Time.deltaTime;
                 yield return null;
             }
-
-            yield break;
         }
 
         public static void Lerp(ref FMuscle_Vector3 source, FMuscle_Vector3 a, FMuscle_Vector3 b, float t)
@@ -225,17 +237,22 @@ namespace FIMSpace.FTools
     }
 
 
-    [System.Serializable]
+    [Serializable]
     public class FMuscle_Quaternion
     {
         [HideInInspector] public Quaternion DesiredRotation;
-        public Quaternion ProceduralRotation { get; private set; }
-        public bool IsCorrect { get { return x != null; } }
+
+        [FPD_Suffix(0f, 10000)] public float Acceleration = 5000f;
+        [FPD_Suffix(0f, 10000)] public float AccelerationLimit = 1000f;
+        [FPD_Suffix(0f, 50f)] public float Damping = 10f;
+        [FPD_Suffix(0f, 1f)] public float BrakePower = 0.2f;
+        private FMuscle_Float w;
 
         private FMuscle_Float x;
         private FMuscle_Float y;
         private FMuscle_Float z;
-        private FMuscle_Float w;
+        public Quaternion ProceduralRotation { get; private set; }
+        public bool IsCorrect => x != null;
 
         public void Initialize(Quaternion initRotation)
         {
@@ -281,7 +298,8 @@ namespace FIMSpace.FTools
             w.Push(value.w * multiply);
         }
 
-        public void Update(float delta, Quaternion desired, float acceleration, float accelerationLimit, float damping, float brakePower)
+        public void Update(float delta, Quaternion desired, float acceleration, float accelerationLimit, float damping,
+            float brakePower)
         {
             x.Update(delta, ProceduralRotation.x, desired.x, acceleration, accelerationLimit, damping, brakePower);
             y.Update(delta, ProceduralRotation.y, desired.y, acceleration, accelerationLimit, damping, brakePower);
@@ -291,10 +309,6 @@ namespace FIMSpace.FTools
             ProceduralRotation = new Quaternion(x.OutValue, y.OutValue, z.OutValue, w.OutValue);
         }
 
-        [FPD_Suffix(0f, 10000)] public float Acceleration = 5000f;
-        [FPD_Suffix(0f, 10000)] public float AccelerationLimit = 1000f;
-        [FPD_Suffix(0f, 50f)] public float Damping = 10f;
-        [FPD_Suffix(0f, 1f)] public float BrakePower = 0.2f;
         public void Update(float delta, Quaternion desired)
         {
             x.Update(delta, ProceduralRotation.x, desired.x, Acceleration, AccelerationLimit, Damping, BrakePower);
@@ -312,34 +326,39 @@ namespace FIMSpace.FTools
 
         public static Quaternion EnsureQuaternionContinuity(Quaternion latestRot, Quaternion targetRot)
         {
-            Quaternion flipped = new Quaternion(-targetRot.x, -targetRot.y, -targetRot.z, -targetRot.w);
-            Quaternion midQ = new Quaternion ( Mathf.LerpUnclamped(latestRot.x, targetRot.x, 0.5f), Mathf.LerpUnclamped(latestRot.y, targetRot.y, 0.5f), Mathf.LerpUnclamped(latestRot.z, targetRot.z, 0.5f), Mathf.LerpUnclamped(latestRot.w, targetRot.w, 0.5f) );
-            Quaternion midQFlipped = new Quaternion(Mathf.LerpUnclamped(latestRot.x, flipped.x, 0.5f),Mathf.LerpUnclamped(latestRot.y, flipped.y, 0.5f),Mathf.LerpUnclamped(latestRot.z, flipped.z, 0.5f),Mathf.LerpUnclamped(latestRot.w, flipped.w, 0.5f));
+            var flipped = new Quaternion(-targetRot.x, -targetRot.y, -targetRot.z, -targetRot.w);
+            var midQ = new Quaternion(Mathf.LerpUnclamped(latestRot.x, targetRot.x, 0.5f),
+                Mathf.LerpUnclamped(latestRot.y, targetRot.y, 0.5f),
+                Mathf.LerpUnclamped(latestRot.z, targetRot.z, 0.5f),
+                Mathf.LerpUnclamped(latestRot.w, targetRot.w, 0.5f));
+            var midQFlipped = new Quaternion(Mathf.LerpUnclamped(latestRot.x, flipped.x, 0.5f),
+                Mathf.LerpUnclamped(latestRot.y, flipped.y, 0.5f), Mathf.LerpUnclamped(latestRot.z, flipped.z, 0.5f),
+                Mathf.LerpUnclamped(latestRot.w, flipped.w, 0.5f));
 
-            float angle = Quaternion.Angle(latestRot, midQ);
-            float angleTreshold = Quaternion.Angle(latestRot, midQFlipped);
+            var angle = Quaternion.Angle(latestRot, midQ);
+            var angleTreshold = Quaternion.Angle(latestRot, midQFlipped);
 
             return angleTreshold < angle ? flipped : targetRot;
         }
 
         /// <summary>
-        /// Adding push force to quaternion
+        ///     Adding push force to quaternion
         /// </summary>
-        public IEnumerator PushImpulseCoroutine(Quaternion power, float duration, bool fadeOutPower = false, float delay = 0f)
+        public IEnumerator PushImpulseCoroutine(Quaternion power, float duration, bool fadeOutPower = false,
+            float delay = 0f)
         {
             if (delay > 0f) yield return new WaitForSeconds(delay);
 
-            float elapsed = 0f;
+            var elapsed = 0f;
             Push(0.001f);
 
             while (elapsed / duration < 1f)
             {
-                if (!fadeOutPower) Push(power, Time.deltaTime * 60f); else Push(power, (1f - elapsed / duration) * Time.deltaTime * 60f);
+                if (!fadeOutPower) Push(power, Time.deltaTime * 60f);
+                else Push(power, (1f - elapsed / duration) * Time.deltaTime * 60f);
                 elapsed += Time.deltaTime;
                 yield return null;
             }
-
-            yield break;
         }
 
         public static void Lerp(ref FMuscle_Quaternion source, FMuscle_Quaternion a, FMuscle_Quaternion b, float t)
@@ -364,17 +383,21 @@ namespace FIMSpace.FTools
     }
 
 
-
-    [System.Serializable]
+    [Serializable]
     public class FMuscle_Eulers
     {
         [HideInInspector] public Vector3 DesiredEulerAngles;
-        public Vector3 ProceduralEulerAngles { get; private set; }
-        public Quaternion ProceduralRotation { get { return Quaternion.Euler(ProceduralEulerAngles); } }
+
+        [FPD_Suffix(0f, 10000)] public float Acceleration = 5000f;
+        [FPD_Suffix(0f, 10000)] public float AccelerationLimit = 1000f;
+        [FPD_Suffix(0f, 50f)] public float Damping = 10f;
+        [FPD_Suffix(0f, 1f)] public float BrakePower = 0.2f;
 
         private FMuscle_Angle x;
         private FMuscle_Angle y;
         private FMuscle_Angle z;
+        public Vector3 ProceduralEulerAngles { get; private set; }
+        public Quaternion ProceduralRotation => Quaternion.Euler(ProceduralEulerAngles);
 
         public void Initialize(Vector3 initEulerAngles)
         {
@@ -420,7 +443,8 @@ namespace FIMSpace.FTools
             z.Push(value.z * multiply);
         }
 
-        public void Update(float delta, Vector3 desired, float acceleration, float accelerationLimit, float damping, float brakePower)
+        public void Update(float delta, Vector3 desired, float acceleration, float accelerationLimit, float damping,
+            float brakePower)
         {
             x.Update(delta, ProceduralEulerAngles.x, desired.x, acceleration, accelerationLimit, damping, brakePower);
             y.Update(delta, ProceduralEulerAngles.y, desired.y, acceleration, accelerationLimit, damping, brakePower);
@@ -429,10 +453,6 @@ namespace FIMSpace.FTools
             ProceduralEulerAngles = new Vector3(x.OutValue, y.OutValue, z.OutValue);
         }
 
-        [FPD_Suffix(0f, 10000)] public float Acceleration = 5000f;
-        [FPD_Suffix(0f, 10000)] public float AccelerationLimit = 1000f;
-        [FPD_Suffix(0f, 50f)] public float Damping = 10f;
-        [FPD_Suffix(0f, 1f)] public float BrakePower = 0.2f;
         public Vector3 Update(float delta, Vector3 desired)
         {
             x.Update(delta, ProceduralEulerAngles.x, desired.x, Acceleration, AccelerationLimit, Damping, BrakePower);
@@ -449,23 +469,23 @@ namespace FIMSpace.FTools
         }
 
         /// <summary>
-        /// Adding push force to quaternion
+        ///     Adding push force to quaternion
         /// </summary>
-        public IEnumerator PushImpulseCoroutine(Vector3 power, float duration, bool fadeOutPower = false, float delay = 0f)
+        public IEnumerator PushImpulseCoroutine(Vector3 power, float duration, bool fadeOutPower = false,
+            float delay = 0f)
         {
             if (delay > 0f) yield return new WaitForSeconds(delay);
 
-            float elapsed = 0f;
+            var elapsed = 0f;
             Push(0.001f);
 
             while (elapsed / duration < 1f)
             {
-                if (!fadeOutPower) Push(power, Time.deltaTime * 60f); else Push(power, (1f - elapsed / duration) * Time.deltaTime * 60f);
+                if (!fadeOutPower) Push(power, Time.deltaTime * 60f);
+                else Push(power, (1f - elapsed / duration) * Time.deltaTime * 60f);
                 elapsed += Time.deltaTime;
                 yield return null;
             }
-
-            yield break;
         }
 
         public static void Lerp(ref FMuscle_Eulers source, FMuscle_Eulers a, FMuscle_Eulers b, float t)
@@ -478,5 +498,4 @@ namespace FIMSpace.FTools
             source.Damping = Mathf.LerpUnclamped(a.Damping, b.Damping, t);
         }
     }
-
 }

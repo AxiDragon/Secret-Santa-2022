@@ -1,11 +1,11 @@
 ﻿using System;
 using UnityEngine;
 
-[AttributeUsage(AttributeTargets.Field | AttributeTargets.Property | AttributeTargets.Class | AttributeTargets.Struct, Inherited = true)]
+[AttributeUsage(AttributeTargets.Field | AttributeTargets.Property | AttributeTargets.Class | AttributeTargets.Struct)]
 public class FPD_HideOnBoolAttribute : PropertyAttribute
 {
     public string BoolVarName = "";
-    public bool HideInInspector = false;
+    public bool HideInInspector;
 
     public FPD_HideOnBoolAttribute(string boolVariableName)
     {

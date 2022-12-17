@@ -1,44 +1,39 @@
 ﻿#if UNITY_EDITOR
 
-using UnityEditor;
-using UnityEngine;
+using System;
 using System.Linq;
 using NodeCanvas.Framework;
-using ParadoxNotion.Design;
 using ParadoxNotion;
+using ParadoxNotion.Design;
+using UnityEditor;
+using UnityEngine;
 
 namespace NodeCanvas.Editor
 {
-
     public class WelcomeWindow : EditorWindow
     {
-
         private static Texture2D header;
-        private static System.Type assetType;
+        private static Type assetType;
         private static Texture2D docsIcon;
         private static Texture2D resourcesIcon;
         private static Texture2D supportIcon;
         private static Texture2D communityIcon;
 
         private GraphInfoAttribute att;
-        private string packageName;
+        private readonly string discordUrl = "https://discord.gg/97q2Rjh";
         private string docsURL;
-        private string resourcesURL;
         private string forumsURL;
-        private string discordUrl = "https://discord.gg/97q2Rjh";
+        private string packageName;
+        private string resourcesURL;
 
         //...
-        public static void ShowWindow(System.Type t) {
-            assetType = t;
-            var window = CreateInstance<WelcomeWindow>();
-            window.ShowUtility();
-        }
-
-        //...
-        void OnEnable() {
+        private void OnEnable()
+        {
             titleContent = new GUIContent("Welcome");
 
-            att = assetType != null ? (GraphInfoAttribute)assetType.GetCustomAttributes(typeof(GraphInfoAttribute), true).FirstOrDefault() : null;
+            att = assetType != null
+                ? (GraphInfoAttribute)assetType.GetCustomAttributes(typeof(GraphInfoAttribute), true).FirstOrDefault()
+                : null;
             packageName = att != null ? att.packageName : "Empty";
             docsURL = att != null ? att.docsURL : "https://paradoxnotion.com/";
             resourcesURL = att != null ? att.resourcesURL : "https://paradoxnotion.com/";
@@ -55,15 +50,13 @@ namespace NodeCanvas.Editor
         }
 
         //...
-        void OnGUI() {
-
-            if ( header == null ) { return; }
+        private void OnGUI()
+        {
+            if (header == null) return;
 
             var headerRect = new Rect(0, 0, header.width, header.height);
             EditorGUIUtility.AddCursorRect(headerRect, MouseCursor.Link);
-            if ( GUI.Button(headerRect, header, GUIStyle.none) ) {
-                UnityEditor.Help.BrowseURL("https://paradoxnotion.com");
-            }
+            if (GUI.Button(headerRect, header, GUIStyle.none)) Help.BrowseURL("https://paradoxnotion.com");
             GUILayout.Space(header.height);
 
             GUI.skin.label.richText = true;
@@ -76,15 +69,21 @@ namespace NodeCanvas.Editor
             var titleRect = headerRect;
             titleRect.x += 30;
 
-            GUILayout.Label(string.Format("Welcome and thank you for purchasing {0}! Following are a few important links to get you started:", packageName));
+            GUILayout.Label(string.Format(
+                "Welcome and thank you for purchasing {0}! Following are a few important links to get you started:",
+                packageName));
             GUILayout.Space(10);
 
             ///----------------------------------------------------------------------------------------------
 
-            ShowEntry(docsIcon, "<size=16><b>Documentation</b></size>\nRead thorough documentation and API reference online.", docsURL);
-            ShowEntry(resourcesIcon, "<size=16><b>Resources</b></size>\nDownload samples, extensions and other resources.", resourcesURL);
-            ShowEntry(supportIcon, "<size=16><b>Support</b></size>\nJoin the online forums, get support and give feedback.", forumsURL);
-            ShowEntry(communityIcon, "<size=16><b>Community</b></size>\nJoin the online Discord community.", discordUrl);
+            ShowEntry(docsIcon,
+                "<size=16><b>Documentation</b></size>\nRead thorough documentation and API reference online.", docsURL);
+            ShowEntry(resourcesIcon,
+                "<size=16><b>Resources</b></size>\nDownload samples, extensions and other resources.", resourcesURL);
+            ShowEntry(supportIcon,
+                "<size=16><b>Support</b></size>\nJoin the online forums, get support and give feedback.", forumsURL);
+            ShowEntry(communityIcon, "<size=16><b>Community</b></size>\nJoin the online Discord community.",
+                discordUrl);
 
 
             ///----------------------------------------------------------------------------------------------
@@ -104,13 +103,20 @@ namespace NodeCanvas.Editor
         }
 
         //...
-        void ShowEntry(Texture2D icon, string text, string url) {
+        public static void ShowWindow(Type t)
+        {
+            assetType = t;
+            var window = CreateInstance<WelcomeWindow>();
+            window.ShowUtility();
+        }
+
+        //...
+        private void ShowEntry(Texture2D icon, string text, string url)
+        {
             GUILayout.BeginHorizontal(Styles.roundedBox);
             GUI.backgroundColor = Color.clear;
             GUI.contentColor = EditorGUIUtility.isProSkin ? ColorUtils.Grey(0.8f) : Color.black;
-            if ( GUILayout.Button(icon, GUILayout.Width(50), GUILayout.Height(50)) ) {
-                UnityEditor.Help.BrowseURL(url);
-            }
+            if (GUILayout.Button(icon, GUILayout.Width(50), GUILayout.Height(50))) Help.BrowseURL(url);
             GUI.contentColor = Color.white;
             EditorGUIUtility.AddCursorRect(GUILayoutUtility.GetLastRect(), MouseCursor.Link);
             GUILayout.BeginVertical();

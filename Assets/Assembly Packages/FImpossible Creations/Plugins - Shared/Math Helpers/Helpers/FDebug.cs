@@ -1,14 +1,17 @@
-﻿using System;
+﻿using System.Diagnostics;
 using UnityEngine;
+using Debug = UnityEngine.Debug;
 
 namespace FIMSpace
 {
     /// <summary>
-    /// FMoeglich: Class with methods which can be helpful in using Unity Console.
-    /// Recommending to use some console extensions like Console Enchanced or other.
+    ///     FMoeglich: Class with methods which can be helpful in using Unity Console.
+    ///     Recommending to use some console extensions like Console Enchanced or other.
     /// </summary>
     public static class FDebug
     {
+        private static readonly Stopwatch _debugWatch = new();
+
         public static void Log(string log)
         {
             Debug.Log("LOG: " + log);
@@ -34,7 +37,6 @@ namespace FIMSpace
             Debug.Log(MarkerColor("#E0D300") + log + EndColorMarker());
         }
 
-        private static readonly System.Diagnostics.Stopwatch _debugWatch = new System.Diagnostics.Stopwatch();
         public static void StartMeasure()
         {
             _debugWatch.Reset();
@@ -54,11 +56,12 @@ namespace FIMSpace
         public static void EndMeasureAndLog(string v)
         {
             _debugWatch.Stop();
-            UnityEngine.Debug.Log("Measure " + v + ": " + _debugWatch.ElapsedTicks + " ticks   " + _debugWatch.ElapsedMilliseconds + "ms");
+            Debug.Log("Measure " + v + ": " + _debugWatch.ElapsedTicks + " ticks   " + _debugWatch.ElapsedMilliseconds +
+                      "ms");
         }
 
         /// <summary>
-        /// Rich text marker for color
+        ///     Rich text marker for color
         /// </summary>
         public static string MarkerColor(string color)
         {
@@ -66,7 +69,7 @@ namespace FIMSpace
         }
 
         /// <summary>
-        /// close rich text marker for color
+        ///     close rich text marker for color
         /// </summary>
         public static string EndColorMarker()
         {
@@ -76,10 +79,10 @@ namespace FIMSpace
 
         public static void DrawBounds2D(this Bounds b, Color c, float y = 0f, float scale = 1f, float duration = 1.1f)
         {
-            Vector3 fr1 = new Vector3(b.max.x, y, b.max.z) * scale;
-            Vector3 br1 = new Vector3(b.max.x, y, b.min.z) * scale;
-            Vector3 bl1 = new Vector3(b.min.x, y, b.min.z) * scale;
-            Vector3 fl1 = new Vector3(b.min.x, y, b.max.z) * scale;
+            var fr1 = new Vector3(b.max.x, y, b.max.z) * scale;
+            var br1 = new Vector3(b.max.x, y, b.min.z) * scale;
+            var bl1 = new Vector3(b.min.x, y, b.min.z) * scale;
+            var fl1 = new Vector3(b.min.x, y, b.max.z) * scale;
             Debug.DrawLine(fr1, br1, c, duration);
             Debug.DrawLine(br1, bl1, c, duration);
             Debug.DrawLine(br1, bl1, c, duration);
@@ -89,20 +92,20 @@ namespace FIMSpace
 
         public static void DrawBounds3D(this Bounds b, Color c, float scale = 1f)
         {
-            Vector3 fr1 = new Vector3(b.max.x, b.min.y, b.max.z) * scale;
-            Vector3 br1 = new Vector3(b.max.x, b.min.y, b.min.z) * scale;
-            Vector3 bl1 = new Vector3(b.min.x, b.min.y, b.min.z) * scale;
-            Vector3 fl1 = new Vector3(b.min.x, b.min.y, b.max.z) * scale;
+            var fr1 = new Vector3(b.max.x, b.min.y, b.max.z) * scale;
+            var br1 = new Vector3(b.max.x, b.min.y, b.min.z) * scale;
+            var bl1 = new Vector3(b.min.x, b.min.y, b.min.z) * scale;
+            var fl1 = new Vector3(b.min.x, b.min.y, b.max.z) * scale;
             Debug.DrawLine(fr1, br1, c, 1.1f);
             Debug.DrawLine(br1, bl1, c, 1.1f);
             Debug.DrawLine(br1, bl1, c, 1.1f);
             Debug.DrawLine(bl1, fl1, c, 1.1f);
             Debug.DrawLine(fl1, fr1, c, 1.1f);
 
-            Vector3 fr = new Vector3(b.max.x, b.max.y, b.max.z) * scale;
-            Vector3 br = new Vector3(b.max.x, b.max.y, b.min.z) * scale;
-            Vector3 bl = new Vector3(b.min.x, b.max.y, b.min.z) * scale;
-            Vector3 fl = new Vector3(b.min.x, b.max.y, b.max.z) * scale;
+            var fr = new Vector3(b.max.x, b.max.y, b.max.z) * scale;
+            var br = new Vector3(b.max.x, b.max.y, b.min.z) * scale;
+            var bl = new Vector3(b.min.x, b.max.y, b.min.z) * scale;
+            var fl = new Vector3(b.min.x, b.max.y, b.max.z) * scale;
             Debug.DrawLine(fr, br, c, 1.1f);
             Debug.DrawLine(br, bl, c, 1.1f);
             Debug.DrawLine(br, bl, c, 1.1f);

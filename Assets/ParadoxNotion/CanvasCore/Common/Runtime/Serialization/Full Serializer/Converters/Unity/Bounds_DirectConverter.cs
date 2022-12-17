@@ -7,7 +7,8 @@ namespace ParadoxNotion.Serialization.FullSerializer.Internal.DirectConverters
 {
     public class Bounds_DirectConverter : fsDirectConverter<Bounds>
     {
-        protected override fsResult DoSerialize(Bounds model, Dictionary<string, fsData> serialized) {
+        protected override fsResult DoSerialize(Bounds model, Dictionary<string, fsData> serialized)
+        {
             var result = fsResult.Success;
 
             result += SerializeMember(serialized, null, "center", model.center);
@@ -16,7 +17,8 @@ namespace ParadoxNotion.Serialization.FullSerializer.Internal.DirectConverters
             return result;
         }
 
-        protected override fsResult DoDeserialize(Dictionary<string, fsData> data, ref Bounds model) {
+        protected override fsResult DoDeserialize(Dictionary<string, fsData> data, ref Bounds model)
+        {
             var result = fsResult.Success;
 
             var t0 = model.center;
@@ -30,7 +32,8 @@ namespace ParadoxNotion.Serialization.FullSerializer.Internal.DirectConverters
             return result;
         }
 
-        public override object CreateInstance(fsData data, Type storageType) {
+        public override object CreateInstance(fsData data, Type storageType)
+        {
             return new Bounds();
         }
     }

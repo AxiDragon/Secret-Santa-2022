@@ -4,8 +4,6 @@ namespace FIMSpace
 {
     public class FImp_ColliderData_Sphere : FImp_ColliderData_Base
     {
-        public SphereCollider Sphere { get; private set; }
-        public CircleCollider2D Sphere2D { get; private set; }
         private float SphereRadius;
 
         public FImp_ColliderData_Sphere(SphereCollider collider)
@@ -28,6 +26,9 @@ namespace FIMSpace
             RefreshColliderData();
         }
 
+        public SphereCollider Sphere { get; }
+        public CircleCollider2D Sphere2D { get; }
+
         public override void RefreshColliderData()
         {
             if (IsStatic) return; // No need to refresh collider data if it is static
@@ -46,26 +47,28 @@ namespace FIMSpace
 
         public override bool PushIfInside(ref Vector3 point, float pointRadius, Vector3 pointOffset)
         {
-            if ( Is2D == false)
-            return PushOutFromSphereCollider(Sphere, pointRadius, ref point, SphereRadius, pointOffset);
-            else
-                return PushOutFromSphereCollider(Sphere2D, pointRadius, ref point, SphereRadius, pointOffset);
+            if (Is2D == false)
+                return PushOutFromSphereCollider(Sphere, pointRadius, ref point, SphereRadius, pointOffset);
+            return PushOutFromSphereCollider(Sphere2D, pointRadius, ref point, SphereRadius, pointOffset);
         }
 
 
-        public static bool PushOutFromSphereCollider(SphereCollider sphere, float segmentColliderRadius, ref Vector3 segmentPos, Vector3 segmentOffset)
+        public static bool PushOutFromSphereCollider(SphereCollider sphere, float segmentColliderRadius,
+            ref Vector3 segmentPos, Vector3 segmentOffset)
         {
-            return PushOutFromSphereCollider(sphere, segmentColliderRadius, ref segmentPos, CalculateTrueRadiusOfSphereCollider(sphere), segmentOffset);
+            return PushOutFromSphereCollider(sphere, segmentColliderRadius, ref segmentPos,
+                CalculateTrueRadiusOfSphereCollider(sphere), segmentOffset);
         }
 
 
-        public static bool PushOutFromSphereCollider(SphereCollider sphere, float segmentColliderRadius, ref Vector3 segmentPos, float collidingSphereRadius, Vector3 segmentOffset)
+        public static bool PushOutFromSphereCollider(SphereCollider sphere, float segmentColliderRadius,
+            ref Vector3 segmentPos, float collidingSphereRadius, Vector3 segmentOffset)
         {
-            Vector3 sphereCenter = sphere.transform.position + sphere.transform.TransformVector(sphere.center);
-            float radius = collidingSphereRadius + segmentColliderRadius;
+            var sphereCenter = sphere.transform.position + sphere.transform.TransformVector(sphere.center);
+            var radius = collidingSphereRadius + segmentColliderRadius;
 
-            Vector3 pushNormal = (segmentPos + segmentOffset) - sphereCenter;
-            float squaredPushMagn = pushNormal.sqrMagnitude;
+            var pushNormal = segmentPos + segmentOffset - sphereCenter;
+            var squaredPushMagn = pushNormal.sqrMagnitude;
 
             if (squaredPushMagn > 0 && squaredPushMagn < radius * radius)
             {
@@ -76,15 +79,17 @@ namespace FIMSpace
             return false;
         }
 
-        public static bool PushOutFromSphereCollider(CircleCollider2D sphere, float segmentColliderRadius, ref Vector3 segmentPos, float collidingSphereRadius, Vector3 segmentOffset)
+        public static bool PushOutFromSphereCollider(CircleCollider2D sphere, float segmentColliderRadius,
+            ref Vector3 segmentPos, float collidingSphereRadius, Vector3 segmentOffset)
         {
-            Vector3 sphereCenter = sphere.transform.position + sphere.transform.TransformVector(sphere.offset);
+            var sphereCenter = sphere.transform.position + sphere.transform.TransformVector(sphere.offset);
             sphereCenter.z = 0f;
-            float radius = collidingSphereRadius + segmentColliderRadius;
+            var radius = collidingSphereRadius + segmentColliderRadius;
 
-            Vector3 pos2D = segmentPos; pos2D.z = 0f;
-            Vector3 pushNormal = (pos2D + segmentOffset) - sphereCenter;
-            float squaredPushMagn = pushNormal.sqrMagnitude;
+            var pos2D = segmentPos;
+            pos2D.z = 0f;
+            var pushNormal = pos2D + segmentOffset - sphereCenter;
+            var squaredPushMagn = pushNormal.sqrMagnitude;
 
             if (squaredPushMagn > 0 && squaredPushMagn < radius * radius)
             {
@@ -98,7 +103,7 @@ namespace FIMSpace
         #region Sphere Calculation Helpers
 
         /// <summary>
-        /// Calculating radius of sphere collider including sphere collider's transform scalling
+        ///     Calculating radius of sphere collider including sphere collider's transform scalling
         /// </summary>
         public static float CalculateTrueRadiusOfSphereCollider(SphereCollider sphere)
         {
@@ -111,11 +116,11 @@ namespace FIMSpace
         }
 
         /// <summary>
-        /// Calculating radius of sphere collider including sphere collider's transform scalling
+        ///     Calculating radius of sphere collider including sphere collider's transform scalling
         /// </summary>
         public static float CalculateTrueRadiusOfSphereCollider(Transform transform, float componentRadius)
         {
-            float radius = componentRadius;
+            var radius = componentRadius;
 
             if (transform.lossyScale.x > transform.lossyScale.y)
             {

@@ -1,50 +1,52 @@
 ﻿using NodeCanvas.Framework;
+using ParadoxNotion;
 using ParadoxNotion.Design;
 using UnityEngine;
 
-
 namespace NodeCanvas.Tasks.Conditions
 {
-
     [Category("Input (Legacy System)")]
     public class CheckMousePick2D : ConditionTask
     {
+        private int buttonID;
 
-        public ParadoxNotion.ButtonKeys buttonKey;
+        public ButtonKeys buttonKey;
+        private RaycastHit2D hit;
         public LayerMask mask = -1;
+        [BlackboardOnly] public BBParameter<float> saveDistanceAs;
 
         [BlackboardOnly] public BBParameter<GameObject> saveGoAs;
-        [BlackboardOnly] public BBParameter<float> saveDistanceAs;
         [BlackboardOnly] public BBParameter<Vector3> savePosAs;
 
-        private int buttonID;
-        private RaycastHit2D hit;
-
-        protected override string info {
+        protected override string info
+        {
             get
             {
-                var finalString = buttonKey.ToString() + " Click";
-                if ( !savePosAs.isNone )
+                var finalString = buttonKey + " Click";
+                if (!savePosAs.isNone)
                     finalString += "\nSavePos As " + savePosAs;
-                if ( !saveGoAs.isNone )
+                if (!saveGoAs.isNone)
                     finalString += "\nSaveGo As " + saveGoAs;
                 return finalString;
             }
         }
 
-        protected override bool OnCheck() {
-
+        protected override bool OnCheck()
+        {
             buttonID = (int)buttonKey;
-            if ( Input.GetMouseButtonDown(buttonID) ) {
+            if (Input.GetMouseButtonDown(buttonID))
+            {
                 var ray = Camera.main.ScreenPointToRay(Input.mousePosition);
                 hit = Physics2D.Raycast(ray.origin, ray.direction, Mathf.Infinity, mask);
-                if ( hit.collider != null ) {
+                if (hit.collider != null)
+                {
                     savePosAs.value = hit.point;
                     saveGoAs.value = hit.collider.gameObject;
                     saveDistanceAs.value = hit.distance;
                     return true;
                 }
             }
+
             return false;
         }
     }

@@ -2,10 +2,8 @@ using NodeCanvas.Framework;
 using ParadoxNotion.Design;
 using UnityEngine;
 
-
 namespace NodeCanvas.Tasks.Actions
 {
-
     [Name("Set Enabled")]
     [Category("GameObject")]
     [Description("Set the monobehaviour's enabled state.")]
@@ -20,22 +18,16 @@ namespace NodeCanvas.Tasks.Actions
 
         public SetEnableMode setTo = SetEnableMode.Toggle;
 
-        protected override string info {
-            get { return string.Format("{0} {1}", setTo, agentInfo); }
-        }
+        protected override string info => string.Format("{0} {1}", setTo, agentInfo);
 
-        protected override void OnExecute() {
-
+        protected override void OnExecute()
+        {
             bool value;
 
-            if ( setTo == SetEnableMode.Toggle ) {
-
+            if (setTo == SetEnableMode.Toggle)
                 value = !agent.enabled;
-
-            } else {
-
+            else
                 value = (int)setTo == 1;
-            }
 
             agent.enabled = value;
             EndAction();

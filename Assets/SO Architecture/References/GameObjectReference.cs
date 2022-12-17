@@ -1,11 +1,17 @@
+using System;
 using UnityEngine;
 
 namespace ScriptableObjectArchitecture
 {
-    [System.Serializable]
+    [Serializable]
     public sealed class GameObjectReference : BaseReference<GameObject, GameObjectVariable>
     {
-        public GameObjectReference() : base() { }
-        public GameObjectReference(GameObject value) : base(value) { }
-    } 
+        public GameObjectReference()
+        {
+        }
+
+        public GameObjectReference(GameObject value) : base(value)
+        {
+        }
+    }
 }

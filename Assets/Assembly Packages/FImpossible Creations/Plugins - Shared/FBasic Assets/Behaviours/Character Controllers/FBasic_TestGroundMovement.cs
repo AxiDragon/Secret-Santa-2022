@@ -1,37 +1,46 @@
-﻿using System.Collections.Generic;
-using UnityEngine;
-
+﻿using UnityEngine;
 
 namespace FIMSpace.Basics
 {
     /// <summary>
-    /// FM: Check my package 'GroundFitter' which providing much more customizable movement than this
+    ///     FM: Check my package 'GroundFitter' which providing much more customizable movement than this
     /// </summary>
     public class FBasic_TestGroundMovement : MonoBehaviour
     {
-        #region  Fitting
+        private void Start()
+        {
+            InitMovement();
+        }
+
+        private void Update()
+        {
+            delta = Time.deltaTime;
+            if (fittingEnabled) FitToGround();
+            UpdateMovement();
+        }
+
+        #region Fitting
 
         [Header("Check my other Package 'Ground Fitter' for", order = 0)]
         [Space(-7f, order = 1)]
         [Header("more customizable ground fit movement", order = 2)]
-        public float RotationYAxis = 0f;
+        public float RotationYAxis;
 
-        [Range(1f, 30f)]
-        public float FittingSpeed = 6f;
+        [Range(1f, 30f)] public float FittingSpeed = 6f;
 
         public float RaycastHeightOffset = 0.5f;
         public float RaycastCheckRange = 5f;
 
-        public float LookAheadRaycast = 0f;
+        public float LookAheadRaycast;
         public float AheadBlend = 0.5f;
 
-        public float YOffset = 0f;
+        public float YOffset;
 
-        [Space(8f)]
-        public LayerMask GroundLayerMask = 1 << 0;
+        [Space(8f)] public LayerMask GroundLayerMask = 1 << 0;
+
         public bool RelativeLookUp = true;
-        [Range(0f, 1f)]
-        public float RelativeLookUpBias = 0.25f;
+
+        [Range(0f, 1f)] public float RelativeLookUpBias = 0.25f;
 
         public RaycastHit LastRaycast { get; protected set; }
         protected Quaternion helperRotation = Quaternion.identity;
@@ -44,35 +53,38 @@ namespace FIMSpace.Basics
         private Vector3 GetUpVector()
         {
             if (RelativeLookUp)
-            {
                 return Vector3.Lerp(transform.up, Vector3.up, RelativeLookUpBias);
-            }
-            else return Vector3.up;
+            return Vector3.up;
         }
 
         protected virtual void FitToGround()
         {
-            RaycastHit aheadHit = new RaycastHit();
+            var aheadHit = new RaycastHit();
 
             if (LookAheadRaycast != 0f)
-                Physics.Raycast(transform.position + GetUpVector() * RaycastHeightOffset + transform.forward * LookAheadRaycast, -GetUpVector(), out aheadHit, RaycastCheckRange + YOffset, GroundLayerMask, QueryTriggerInteraction.Ignore);
+                Physics.Raycast(
+                    transform.position + GetUpVector() * RaycastHeightOffset + transform.forward * LookAheadRaycast,
+                    -GetUpVector(), out aheadHit, RaycastCheckRange + YOffset, GroundLayerMask,
+                    QueryTriggerInteraction.Ignore);
 
             RefreshLastRaycast();
 
             if (LastRaycast.transform)
             {
-                Quaternion fromTo = Quaternion.FromToRotation(Vector3.up, LastRaycast.normal);
+                var fromTo = Quaternion.FromToRotation(Vector3.up, LastRaycast.normal);
 
                 if (aheadHit.transform)
                 {
-                    Quaternion aheadFromTo = Quaternion.FromToRotation(Vector3.up, aheadHit.normal);
+                    var aheadFromTo = Quaternion.FromToRotation(Vector3.up, aheadHit.normal);
                     fromTo = Quaternion.Lerp(fromTo, aheadFromTo, AheadBlend);
                 }
 
                 helperRotation = Quaternion.Slerp(helperRotation, fromTo, delta * FittingSpeed);
             }
             else // If nothing is under our legs we rotate object smoothly to zero rotations
+            {
                 helperRotation = Quaternion.Slerp(helperRotation, Quaternion.identity, delta * FittingSpeed);
+            }
 
             RotationCalculations();
 
@@ -82,14 +94,15 @@ namespace FIMSpace.Basics
 
         internal void RotationCalculations()
         {
-            Quaternion targetRotation = helperRotation * Quaternion.AngleAxis(RotationYAxis, Vector3.up);
+            var targetRotation = helperRotation * Quaternion.AngleAxis(RotationYAxis, Vector3.up);
             transform.rotation = targetRotation;
         }
 
         internal RaycastHit CastRay()
         {
             RaycastHit outHit;
-            Physics.Raycast(transform.position + GetUpVector() * RaycastHeightOffset, -GetUpVector(), out outHit, RaycastCheckRange + Mathf.Abs(YOffset), GroundLayerMask, QueryTriggerInteraction.Ignore);
+            Physics.Raycast(transform.position + GetUpVector() * RaycastHeightOffset, -GetUpVector(), out outHit,
+                RaycastCheckRange + Mathf.Abs(YOffset), GroundLayerMask, QueryTriggerInteraction.Ignore);
             return outHit;
         }
 
@@ -106,45 +119,44 @@ namespace FIMSpace.Basics
 
         protected bool fittingEnabled = true;
 
-        [Header("> Movement <")]
-        public float BaseSpeed = 3f;
+        [Header("> Movement <")] public float BaseSpeed = 3f;
+
         public float RotateToTargetSpeed = 6f;
         public float SprintingSpeed = 10f;
 
-        protected float ActiveSpeed = 0f;
+        protected float ActiveSpeed;
         public float AccelerationSpeed = 10f;
         public float DecelerationSpeed = 10f;
 
         public float JumpPower = 7f;
         public float gravity = 15f;
-        public bool MultiplySprintAnimation = false;
+        public bool MultiplySprintAnimation;
 
         internal float YVelocity;
-        protected bool inAir = false;
+        protected bool inAir;
         protected float gravityOffset = 0f;
 
-        internal bool MoveForward = false;
-        internal bool Sprint = false;
-        internal float RotationOffset = 0f;
+        internal bool MoveForward;
+        internal bool Sprint;
+        internal float RotationOffset;
 
         protected string lastAnim = "";
 
         protected Animator animator;
 
-        protected bool animatorHaveAnimationSpeedProp = false;
+        protected bool animatorHaveAnimationSpeedProp;
         protected float initialYOffset;
 
         protected Vector3 holdJumpPosition;
         protected float freezeJumpYPosition;
 
-        private bool oneAnimation = false;
-        private bool jumpAnimation = false;
+        private bool oneAnimation;
+        private bool jumpAnimation;
 
         #region Methods
 
-
         /// <summary>
-        /// Preparin initial stuff
+        ///     Preparin initial stuff
         /// </summary>
         protected virtual void InitMovement()
         {
@@ -180,10 +192,13 @@ namespace FIMSpace.Basics
         {
             if (Input.GetKeyDown(KeyCode.Space)) Jump();
 
-            if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.D) ||
-                Input.GetKey(KeyCode.UpArrow) || Input.GetKey(KeyCode.LeftArrow) || Input.GetKey(KeyCode.DownArrow) || Input.GetKey(KeyCode.RightArrow))
+            if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.S) ||
+                Input.GetKey(KeyCode.D) ||
+                Input.GetKey(KeyCode.UpArrow) || Input.GetKey(KeyCode.LeftArrow) || Input.GetKey(KeyCode.DownArrow) ||
+                Input.GetKey(KeyCode.RightArrow))
             {
-                if (Input.GetKey(KeyCode.LeftShift)) Sprint = true; else Sprint = false;
+                if (Input.GetKey(KeyCode.LeftShift)) Sprint = true;
+                else Sprint = false;
 
                 RotationOffset = 0f;
                 if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow)) RotationOffset = -90;
@@ -209,7 +224,9 @@ namespace FIMSpace.Basics
                     YOffset = initialYOffset;
             }
             else
+            {
                 YOffset += YVelocity * delta;
+            }
 
             if (inAir) YVelocity -= gravity * delta;
 
@@ -226,8 +243,7 @@ namespace FIMSpace.Basics
                         fittingEnabled = false;
                     }
                 }
-                else
-                    if (YVelocity > 0f)
+                else if (YVelocity > 0f)
                 {
                     inAir = true;
                 }
@@ -239,36 +255,32 @@ namespace FIMSpace.Basics
 
                 if (YVelocity < 0f)
                 {
-                    RaycastHit hit = CastRay();
+                    var hit = CastRay();
 
                     if (hit.transform)
-                    {
-                        if (transform.position.y + (YVelocity * delta) <= hit.point.y + initialYOffset + 0.05f)
+                        if (transform.position.y + YVelocity * delta <= hit.point.y + initialYOffset + 0.05f)
                         {
-                            YOffset -= (hit.point.y - freezeJumpYPosition);
+                            YOffset -= hit.point.y - freezeJumpYPosition;
                             HitGround();
                         }
-                    }
                 }
                 else
                 {
-                    RaycastHit hit = CastRay();
+                    var hit = CastRay();
 
                     if (hit.transform)
-                    {
                         if (hit.point.y - 0.1f > transform.position.y)
                         {
                             YOffset = initialYOffset;
                             YVelocity = -1f;
                             HitGround();
                         }
-                    }
                 }
             }
         }
 
         /// <summary>
-        /// Handling switching animation clips of Animator
+        ///     Handling switching animation clips of Animator
         /// </summary>
         protected virtual void HandleAnimations()
         {
@@ -277,13 +289,13 @@ namespace FIMSpace.Basics
                 if (ActiveSpeed > 0.15f)
                 {
                     if (Sprint)
-                        CrossfadeTo("Run", 0.25f);
+                        CrossfadeTo("Run");
                     else
-                        CrossfadeTo("Walk", 0.25f);
+                        CrossfadeTo("Walk");
                 }
                 else
                 {
-                    CrossfadeTo("Idle", 0.25f);
+                    CrossfadeTo("Idle");
                 }
             }
 
@@ -291,23 +303,26 @@ namespace FIMSpace.Basics
             {
                 // If object is in air we just slowing animation speed to zero
                 if (animatorHaveAnimationSpeedProp)
-                    if (inAir) FAnimatorMethods.LerpFloatValue(animator, "AnimationSpeed", 0f, 30f);
+                    if (inAir) animator.LerpFloatValue("AnimationSpeed", 0f, 30f);
                     else
-                        FAnimatorMethods.LerpFloatValue(animator, "AnimationSpeed", MultiplySprintAnimation ? (ActiveSpeed / BaseSpeed) : Mathf.Min(1f, (ActiveSpeed / BaseSpeed)), 30f);
+                        animator.LerpFloatValue("AnimationSpeed",
+                            MultiplySprintAnimation ? ActiveSpeed / BaseSpeed : Mathf.Min(1f, ActiveSpeed / BaseSpeed),
+                            30f);
             }
             else
             {
                 // If object is in air we just slowing animation speed to zero
                 if (animatorHaveAnimationSpeedProp)
-                    if (inAir) FAnimatorMethods.LerpFloatValue(animator, "AnimationSpeed", 0f);
+                    if (inAir) animator.LerpFloatValue("AnimationSpeed");
                     else
-                        FAnimatorMethods.LerpFloatValue(animator, "AnimationSpeed", MultiplySprintAnimation ? (ActiveSpeed / BaseSpeed) : Mathf.Min(1f, (ActiveSpeed / BaseSpeed)));
+                        animator.LerpFloatValue("AnimationSpeed",
+                            MultiplySprintAnimation ? ActiveSpeed / BaseSpeed : Mathf.Min(1f, ActiveSpeed / BaseSpeed));
             }
         }
 
 
         /// <summary>
-        /// Refreshing some switching to new landing position varibles, useful in custom coding
+        ///     Refreshing some switching to new landing position varibles, useful in custom coding
         /// </summary>
         protected void RefreshHitGroundVars(RaycastHit hit)
         {
@@ -318,7 +333,7 @@ namespace FIMSpace.Basics
 
 
         /// <summary>
-        /// Calculating changes for transform
+        ///     Calculating changes for transform
         /// </summary>
         protected virtual void HandleTransforming()
         {
@@ -331,7 +346,9 @@ namespace FIMSpace.Basics
                     freezeJumpYPosition = holdJumpPosition.y;
                 }
                 else
+                {
                     inAir = true;
+                }
             }
             else
             {
@@ -342,11 +359,15 @@ namespace FIMSpace.Basics
             {
                 if (!fittingEnabled)
                 {
-                    RotationYAxis = Mathf.LerpAngle(RotationYAxis, Camera.main.transform.eulerAngles.y + RotationOffset, delta * RotateToTargetSpeed * 0.15f);
+                    RotationYAxis = Mathf.LerpAngle(RotationYAxis, Camera.main.transform.eulerAngles.y + RotationOffset,
+                        delta * RotateToTargetSpeed * 0.15f);
                     RotationCalculations();
                 }
                 else
-                    RotationYAxis = Mathf.LerpAngle(RotationYAxis, Camera.main.transform.eulerAngles.y + RotationOffset, delta * RotateToTargetSpeed);
+                {
+                    RotationYAxis = Mathf.LerpAngle(RotationYAxis, Camera.main.transform.eulerAngles.y + RotationOffset,
+                        delta * RotateToTargetSpeed);
+                }
 
 
                 if (!Sprint)
@@ -361,14 +382,14 @@ namespace FIMSpace.Basics
                 else ActiveSpeed = 0f;
             }
 
-            float rev = 1f;
+            var rev = 1f;
             if (Input.GetKey(KeyCode.LeftControl)) rev = -1f;
-            holdJumpPosition += ((transform.forward * ActiveSpeed) * rev) * delta;
+            holdJumpPosition += transform.forward * ActiveSpeed * rev * delta;
             transform.position = holdJumpPosition;
         }
 
         /// <summary>
-        /// Method executed when object is landing on ground from beeing in air lately
+        ///     Method executed when object is landing on ground from beeing in air lately
         /// </summary>
         protected virtual void HitGround()
         {
@@ -379,21 +400,18 @@ namespace FIMSpace.Basics
         }
 
         /// <summary>
-        /// Trigger this method so object will jump
+        ///     Trigger this method so object will jump
         /// </summary>
         public virtual void Jump()
         {
             YVelocity = JumpPower;
             YOffset += JumpPower * Time.deltaTime / 2f;
 
-            if (jumpAnimation)
-            {
-                CrossfadeTo("Jump", 0.125f);
-            }
+            if (jumpAnimation) CrossfadeTo("Jump", 0.125f);
         }
 
         /// <summary>
-        /// Crossfading to target animation with protection of playing same animation over again
+        ///     Crossfading to target animation with protection of playing same animation over again
         /// </summary>
         protected virtual void CrossfadeTo(string animation, float transitionTime = 0.25f)
         {
@@ -402,7 +420,8 @@ namespace FIMSpace.Basics
             if (!animator.HasState(0, Animator.StringToHash(animation)))
             {
                 // Preventing holding shift for sprint and starting walking freeze on idle  
-                if (animation == "Run") animation = "Walk"; else return;
+                if (animation == "Run") animation = "Walk";
+                else return;
             }
 
             if (lastAnim != animation)
@@ -413,35 +432,18 @@ namespace FIMSpace.Basics
         }
 
         /// <summary>
-        /// Checking if animator have parameter with choosed name
+        ///     Checking if animator have parameter with choosed name
         /// </summary>
         public static bool HasParameter(Animator animator, string paramName)
         {
-            foreach (AnimatorControllerParameter param in animator.parameters)
-            {
+            foreach (var param in animator.parameters)
                 if (param.name == paramName)
                     return true;
-            }
             return false;
         }
 
         #endregion
 
-
-
         #endregion
-
-        private void Start()
-        {
-            InitMovement();
-        }
-
-        void Update()
-        {
-            delta = Time.deltaTime;
-            if (fittingEnabled) FitToGround();
-            UpdateMovement();
-        }
-
     }
 }

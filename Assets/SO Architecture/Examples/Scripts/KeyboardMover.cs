@@ -4,8 +4,7 @@ namespace ScriptableObjectArchitecture.Examples
 {
     public class KeyboardMover : MonoBehaviour
     {
-        [SerializeField]
-        private FloatReference _moveSpeed = default(FloatReference);
+        [SerializeField] private FloatReference _moveSpeed = default;
 
         private void Update()
         {

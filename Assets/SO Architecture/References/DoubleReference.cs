@@ -1,9 +1,16 @@
-﻿namespace ScriptableObjectArchitecture
+﻿using System;
+
+namespace ScriptableObjectArchitecture
 {
-    [System.Serializable]
+    [Serializable]
     public sealed class DoubleReference : BaseReference<double, DoubleVariable>
     {
-        public DoubleReference() : base() { }
-        public DoubleReference(double value) : base(value) { }
-    } 
+        public DoubleReference()
+        {
+        }
+
+        public DoubleReference(double value) : base(value)
+        {
+        }
+    }
 }

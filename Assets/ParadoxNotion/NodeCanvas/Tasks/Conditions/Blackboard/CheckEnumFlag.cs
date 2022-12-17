@@ -6,15 +6,16 @@ using ParadoxNotion.Design;
 [Category("✫ Blackboard")]
 public class CheckEnumFlag : ConditionTask
 {
-    [BlackboardOnly]
-    [RequiredField]
-    public readonly BBObjectParameter Variable = new BBObjectParameter(typeof(Enum));
+    public readonly BBObjectParameter Flag = new(typeof(Enum));
 
-    public readonly BBObjectParameter Flag = new BBObjectParameter(typeof(Enum));
+    [BlackboardOnly] [RequiredField] public readonly BBObjectParameter Variable = new(typeof(Enum));
 
     protected override string info => $"{Variable} has {Flag} flag";
 
-    protected override bool OnCheck() => ((Enum)Variable.value).HasFlag((Enum)Flag.value);
+    protected override bool OnCheck()
+    {
+        return ((Enum)Variable.value).HasFlag((Enum)Flag.value);
+    }
 
 #if UNITY_EDITOR
 

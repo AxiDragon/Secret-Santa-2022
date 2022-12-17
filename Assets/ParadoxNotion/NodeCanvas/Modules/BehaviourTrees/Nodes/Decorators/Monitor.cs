@@ -1,90 +1,91 @@
-﻿using UnityEngine;
-using NodeCanvas.Framework;
+﻿using NodeCanvas.Framework;
 using ParadoxNotion.Design;
+using UnityEngine;
 
 namespace NodeCanvas.BehaviourTrees
 {
-
     [Category("Decorators")]
     [ParadoxNotion.Design.Icon("Eye")]
-    [Description("Monitors the decorated child for a returned Status and executes an Action when that is the case.\nThe final Status returned to the parent can either be the original decorated child Status, or the new decorator Action Status.")]
+    [Description(
+        "Monitors the decorated child for a returned Status and executes an Action when that is the case.\nThe final Status returned to the parent can either be the original decorated child Status, or the new decorator Action Status.")]
     public class Monitor : BTDecorator, ITaskAssignable<ActionTask>
     {
-
         public enum MonitorMode
         {
             Failure = 0,
             Success = 1,
-            AnyStatus = 10,
+            AnyStatus = 10
         }
 
         public enum ReturnStatusMode
         {
             OriginalDecoratedChildStatus,
-            NewDecoratorActionStatus,
+            NewDecoratorActionStatus
         }
 
-        [Name("Monitor"), Tooltip("The Status to monitor for.")]
-        public MonitorMode monitorMode;
-        [Name("Return"), Tooltip("The Status to return after (and if) the Action is executed.")]
-        public ReturnStatusMode returnMode;
+        [SerializeField] private ActionTask _action;
 
         private Status decoratorActionStatus;
 
-        [SerializeField]
-        private ActionTask _action;
+        [Name("Monitor")] [Tooltip("The Status to monitor for.")]
+        public MonitorMode monitorMode;
 
-        public ActionTask action {
-            get { return _action; }
-            set { _action = value; }
+        [Name("Return")] [Tooltip("The Status to return after (and if) the Action is executed.")]
+        public ReturnStatusMode returnMode;
+
+        public ActionTask action
+        {
+            get => _action;
+            set => _action = value;
         }
 
-        public Task task {
-            get { return action; }
-            set { action = (ActionTask)value; }
+        public Task task
+        {
+            get => action;
+            set => action = (ActionTask)value;
         }
 
-        protected override Status OnExecute(Component agent, IBlackboard blackboard) {
-
-            if ( decoratedConnection == null ) {
-                return Status.Optional;
-            }
+        protected override Status OnExecute(Component agent, IBlackboard blackboard)
+        {
+            if (decoratedConnection == null) return Status.Optional;
 
             var newChildStatus = decoratedConnection.Execute(agent, blackboard);
-            if ( action == null ) {
-                return newChildStatus;
-            }
+            if (action == null) return newChildStatus;
 
-            if ( status != newChildStatus ) {
+            if (status != newChildStatus)
+            {
                 var execute = false;
                 execute |= newChildStatus == Status.Success && monitorMode == MonitorMode.Success;
                 execute |= newChildStatus == Status.Failure && monitorMode == MonitorMode.Failure;
                 execute |= monitorMode == MonitorMode.AnyStatus && newChildStatus != Status.Running;
 
-                if ( execute ) {
+                if (execute)
+                {
                     decoratorActionStatus = action.Execute(agent, blackboard);
-                    if ( decoratorActionStatus == Status.Running ) {
-                        return Status.Running;
-                    }
+                    if (decoratorActionStatus == Status.Running) return Status.Running;
                 }
             }
 
-            return returnMode == ReturnStatusMode.NewDecoratorActionStatus && decoratorActionStatus != Status.Resting ? decoratorActionStatus : newChildStatus;
+            return returnMode == ReturnStatusMode.NewDecoratorActionStatus && decoratorActionStatus != Status.Resting
+                ? decoratorActionStatus
+                : newChildStatus;
         }
 
-        protected override void OnReset() {
-            if ( action != null ) {
+        protected override void OnReset()
+        {
+            if (action != null)
+            {
                 action.EndAction(null);
                 decoratorActionStatus = Status.Resting;
             }
         }
 
 
-        ///----------------------------------------------------------------------------------------------
-        ///---------------------------------------UNITY EDITOR-------------------------------------------
+        /// ----------------------------------------------------------------------------------------------
+        /// ---------------------------------------UNITY EDITOR-------------------------------------------
 #if UNITY_EDITOR
-
-        protected override void OnNodeGUI() {
+        protected override void OnNodeGUI()
+        {
             GUILayout.Label(string.Format("<b>[On {0}]</b>", monitorMode.ToString()));
         }
 

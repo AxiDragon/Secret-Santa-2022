@@ -1,95 +1,105 @@
-﻿using System.Collections.Generic;
-using System.Reflection;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
+using NodeCanvas.Editor;
 using NodeCanvas.Framework;
 using NodeCanvas.Framework.Internal;
 using ParadoxNotion;
 using ParadoxNotion.Design;
 using ParadoxNotion.Serialization;
+using UnityEditor;
 using UnityEngine;
-
 
 namespace NodeCanvas.Tasks.Actions
 {
-
     [Name("Implemented Action", 9)]
     [Category("✫ Reflected")]
-    [Description("Calls a function that has signature of 'public Status NAME()' or 'public Status NAME(T)'. You should return Status.Success, Failure or Running within that function.")]
+    [Description(
+        "Calls a function that has signature of 'public Status NAME()' or 'public Status NAME(T)'. You should return Status.Success, Failure or Running within that function.")]
     public class ImplementedAction_Multiplatform : ActionTask, IReflectedWrapper
     {
-
-        [SerializeField]
-        private SerializedMethodInfo method;
-        [SerializeField]
-        private List<BBObjectParameter> parameters = new List<BBObjectParameter>();
-
         private Status actionStatus = Status.Resting;
         private object[] args;
 
+        [SerializeField] private SerializedMethodInfo method;
+
+        [SerializeField] private readonly List<BBObjectParameter> parameters = new();
+
         private MethodInfo targetMethod => method;
 
-        public override System.Type agentType {
+        public override Type agentType
+        {
             get
             {
-                if ( targetMethod == null ) { return typeof(Transform); }
+                if (targetMethod == null) return typeof(Transform);
                 return targetMethod.IsStatic ? null : targetMethod.RTReflectedOrDeclaredType();
             }
         }
 
-        protected override string info {
+        protected override string info
+        {
             get
             {
-                if ( method == null ) { return "No Action Selected"; }
-                if ( targetMethod == null ) { return method.AsString().FormatError(); }
+                if (method == null) return "No Action Selected";
+                if (targetMethod == null) return method.AsString().FormatError();
                 var mInfo = targetMethod.IsStatic ? targetMethod.RTReflectedOrDeclaredType().FriendlyName() : agentInfo;
-                return string.Format("[ {0}.{1}({2}) ]", mInfo, targetMethod.Name, parameters.Count == 1 ? parameters[0].ToString() : "");
+                return string.Format("[ {0}.{1}({2}) ]", mInfo, targetMethod.Name,
+                    parameters.Count == 1 ? parameters[0].ToString() : "");
             }
         }
 
-        ISerializedReflectedInfo IReflectedWrapper.GetSerializedInfo() { return method; }
-
-        public override void OnValidate(ITaskSystem ownerSystem) {
-            if ( method != null && method.HasChanged() ) { SetMethod(method); }
+        ISerializedReflectedInfo IReflectedWrapper.GetSerializedInfo()
+        {
+            return method;
         }
 
-        protected override string OnInit() {
-            if ( method == null ) { return "No method selected"; }
-            if ( targetMethod == null ) { return string.Format("Missing method '{0}'", method.AsString()); }
+        public override void OnValidate(ITaskSystem ownerSystem)
+        {
+            if (method != null && method.HasChanged()) SetMethod(method);
+        }
 
-            if ( args == null ) {
-                args = new object[targetMethod.GetParameters().Length];
-            }
+        protected override string OnInit()
+        {
+            if (method == null) return "No method selected";
+            if (targetMethod == null) return string.Format("Missing method '{0}'", method.AsString());
+
+            if (args == null) args = new object[targetMethod.GetParameters().Length];
             return null;
         }
 
-        protected override void OnUpdate() {
-            for ( var i = 0; i < parameters.Count; i++ ) {
-                args[i] = parameters[i].value;
-            }
+        protected override void OnUpdate()
+        {
+            for (var i = 0; i < parameters.Count; i++) args[i] = parameters[i].value;
 
             actionStatus = (Status)targetMethod.Invoke(targetMethod.IsStatic ? null : agent, args);
 
-            if ( actionStatus == Status.Success ) {
+            if (actionStatus == Status.Success)
+            {
                 EndAction(true);
                 return;
             }
 
-            if ( actionStatus == Status.Failure ) {
+            if (actionStatus == Status.Failure)
+            {
                 EndAction(false);
-                return;
             }
         }
 
-        protected override void OnStop() {
+        protected override void OnStop()
+        {
             actionStatus = Status.Resting;
         }
 
-        void SetMethod(MethodInfo method) {
-            if ( method != null ) {
+        private void SetMethod(MethodInfo method)
+        {
+            if (method != null)
+            {
                 UndoUtility.RecordObject(ownerSystem.contextObject, "Set Reflection Member");
                 this.method = new SerializedMethodInfo(method);
-                this.parameters.Clear();
-                foreach ( var p in method.GetParameters() ) {
+                parameters.Clear();
+                foreach (var p in method.GetParameters())
+                {
                     var newParam = new BBObjectParameter(p.ParameterType) { bb = blackboard };
                     parameters.Add(newParam);
                 }
@@ -97,43 +107,50 @@ namespace NodeCanvas.Tasks.Actions
         }
 
 
-        ///----------------------------------------------------------------------------------------------
-        ///---------------------------------------UNITY EDITOR-------------------------------------------
+        /// ----------------------------------------------------------------------------------------------
+        /// ---------------------------------------UNITY EDITOR-------------------------------------------
 #if UNITY_EDITOR
-
-        protected override void OnTaskInspectorGUI() {
-
-            if ( !Application.isPlaying && GUILayout.Button("Select Action Method") ) {
-                var menu = new UnityEditor.GenericMenu();
-                if ( agent != null ) {
-                    foreach ( var comp in agent.GetComponents(typeof(Component)).Where(c => !c.hideFlags.HasFlag(HideFlags.HideInInspector)) ) {
-                        menu = EditorUtils.GetInstanceMethodSelectionMenu(comp.GetType(), typeof(Status), typeof(object), SetMethod, 1, false, true, menu);
-                    }
+        protected override void OnTaskInspectorGUI()
+        {
+            if (!Application.isPlaying && GUILayout.Button("Select Action Method"))
+            {
+                var menu = new GenericMenu();
+                if (agent != null)
+                {
+                    foreach (var comp in agent.GetComponents(typeof(Component))
+                                 .Where(c => !c.hideFlags.HasFlag(HideFlags.HideInInspector)))
+                        menu = EditorUtils.GetInstanceMethodSelectionMenu(comp.GetType(), typeof(Status),
+                            typeof(object), SetMethod, 1, false, true, menu);
                     menu.AddSeparator("/");
                 }
-                foreach ( var t in TypePrefs.GetPreferedTypesList(typeof(object)) ) {
-                    menu = EditorUtils.GetStaticMethodSelectionMenu(t, typeof(Status), typeof(object), SetMethod, 1, false, true, menu);
-                    if ( typeof(UnityEngine.Component).IsAssignableFrom(t) ) {
-                        menu = EditorUtils.GetInstanceMethodSelectionMenu(t, typeof(Status), typeof(object), SetMethod, 1, false, true, menu);
-                    }
+
+                foreach (var t in TypePrefs.GetPreferedTypesList(typeof(object)))
+                {
+                    menu = EditorUtils.GetStaticMethodSelectionMenu(t, typeof(Status), typeof(object), SetMethod, 1,
+                        false, true, menu);
+                    if (typeof(Component).IsAssignableFrom(t))
+                        menu = EditorUtils.GetInstanceMethodSelectionMenu(t, typeof(Status), typeof(object), SetMethod,
+                            1, false, true, menu);
                 }
-                menu.ShowAsBrowser("Select Action Method", this.GetType());
+
+                menu.ShowAsBrowser("Select Action Method", GetType());
                 Event.current.Use();
             }
 
-            if ( targetMethod != null ) {
+            if (targetMethod != null)
+            {
                 GUILayout.BeginVertical("box");
-                UnityEditor.EditorGUILayout.LabelField("Type", targetMethod.RTReflectedOrDeclaredType().FriendlyName());
-                UnityEditor.EditorGUILayout.LabelField("Selected Action Method:", targetMethod.Name);
+                EditorGUILayout.LabelField("Type", targetMethod.RTReflectedOrDeclaredType().FriendlyName());
+                EditorGUILayout.LabelField("Selected Action Method:", targetMethod.Name);
                 GUILayout.EndVertical();
 
-                if ( targetMethod.GetParameters().Length == 1 ) {
+                if (targetMethod.GetParameters().Length == 1)
+                {
                     var paramName = targetMethod.GetParameters()[0].Name.SplitCamelCase();
-                    NodeCanvas.Editor.BBParameterEditor.ParameterField(paramName, parameters[0]);
+                    BBParameterEditor.ParameterField(paramName, parameters[0]);
                 }
             }
         }
 #endif
-
     }
 }

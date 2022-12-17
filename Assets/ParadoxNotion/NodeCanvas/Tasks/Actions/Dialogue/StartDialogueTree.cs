@@ -1,37 +1,43 @@
-﻿using UnityEngine;
-using ParadoxNotion.Design;
+﻿using NodeCanvas.DialogueTrees;
 using NodeCanvas.Framework;
-using NodeCanvas.DialogueTrees;
+using ParadoxNotion.Design;
+using UnityEngine;
 
 namespace NodeCanvas.Tasks.Actions
 {
-
     [Category("Dialogue")]
-    [Description("Starts the Dialogue Tree assigned on a Dialogue Tree Controller object with specified agent used for 'Instigator'.")]
+    [Description(
+        "Starts the Dialogue Tree assigned on a Dialogue Tree Controller object with specified agent used for 'Instigator'.")]
     [ParadoxNotion.Design.Icon("Dialogue")]
     public class StartDialogueTree : ActionTask<IDialogueActor>
     {
-
-        [RequiredField]
-        public BBParameter<DialogueTreeController> dialogueTreeController;
-        public bool waitActionFinish = true;
-
-        public bool isPrefab;
+        [RequiredField] public BBParameter<DialogueTreeController> dialogueTreeController;
 
         private DialogueTreeController instance;
 
-        protected override string info {
-            get { return string.Format("Start Dialogue {0}", dialogueTreeController); }
-        }
+        public bool isPrefab;
+        public bool waitActionFinish = true;
 
-        protected override void OnExecute() {
+        protected override string info => string.Format("Start Dialogue {0}", dialogueTreeController);
 
-            instance = isPrefab ? GameObject.Instantiate(dialogueTreeController.value) : dialogueTreeController.value;
+        protected override void OnExecute()
+        {
+            instance = isPrefab ? Object.Instantiate(dialogueTreeController.value) : dialogueTreeController.value;
 
-            if ( waitActionFinish ) {
-                instance.StartDialogue(agent, (success) => { if ( isPrefab ) { Object.Destroy(instance.gameObject); } EndAction(success); });
-            } else {
-                instance.StartDialogue(agent, (success) => { if ( isPrefab ) Object.Destroy(instance.gameObject); });
+            if (waitActionFinish)
+            {
+                instance.StartDialogue(agent, success =>
+                {
+                    if (isPrefab) Object.Destroy(instance.gameObject);
+                    EndAction(success);
+                });
+            }
+            else
+            {
+                instance.StartDialogue(agent, success =>
+                {
+                    if (isPrefab) Object.Destroy(instance.gameObject);
+                });
                 EndAction();
             }
         }

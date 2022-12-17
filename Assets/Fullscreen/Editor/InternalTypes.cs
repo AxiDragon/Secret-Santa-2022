@@ -1,9 +1,10 @@
 using System;
 
-namespace FullscreenEditor {
+namespace FullscreenEditor
+{
     /// <summary>Class containing types of UnityEditor internal classes.</summary>
-    public static class Types {
-
+    public static class Types
+    {
         /// <summary>UnityEditor.HostView</summary>
         public static readonly Type HostView = ReflectionUtility.FindClass("UnityEditor.HostView");
 
@@ -20,7 +21,8 @@ namespace FullscreenEditor {
         public static readonly Type GameView = ReflectionUtility.FindClass("UnityEditor.GameView");
 
         /// <summary>UnityEditor.PreviewEditorWindow</summary>
-        public static readonly Type PreviewEditorWindow = ReflectionUtility.FindClass("UnityEditor.PreviewEditorWindow");
+        public static readonly Type PreviewEditorWindow =
+            ReflectionUtility.FindClass("UnityEditor.PreviewEditorWindow");
 
         /// <summary>UnityEditor.PlayModeView</summary>
         public static readonly Type PlayModeView = ReflectionUtility.FindClass("UnityEditor.PlayModeView");
@@ -37,6 +39,5 @@ namespace FullscreenEditor {
         /// <summary>UnityEditor.PlayModeView.EnterPlayModeBehavior</summary>
         // Enum type
         public static readonly Type EnterPlayModeBehavior = PlayModeView?.GetNestedType("EnterPlayModeBehavior");
-
     }
 }

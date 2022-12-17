@@ -1,5 +1,4 @@
 ﻿using FIMSpace.FTools;
-using UnityEngine;
 
 namespace FIMSpace.BonesStimulation
 {

@@ -1,9 +1,16 @@
-﻿namespace ScriptableObjectArchitecture
+﻿using System;
+
+namespace ScriptableObjectArchitecture
 {
-    [System.Serializable]
+    [Serializable]
     public sealed class UShortReference : BaseReference<ushort, UShortVariable>
     {
-        public UShortReference() : base() { }
-        public UShortReference(ushort value) : base(value) { }
-    } 
+        public UShortReference()
+        {
+        }
+
+        public UShortReference(ushort value) : base(value)
+        {
+        }
+    }
 }

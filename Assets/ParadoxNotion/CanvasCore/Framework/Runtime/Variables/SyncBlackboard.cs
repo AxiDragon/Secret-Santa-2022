@@ -1,5 +1,4 @@
 ﻿#if !UNITY_2018_3_OR_NEWER
-
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;

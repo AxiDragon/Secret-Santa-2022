@@ -1,10 +1,11 @@
-﻿using UnityEngine;
+﻿using System;
 using UnityEngine.Events;
+using Object = UnityEngine.Object;
 
 namespace ScriptableObjectArchitecture
 {
-    [System.Serializable]
+    [Serializable]
     public class ObjectUnityEvent : UnityEvent<Object>
     {
-    } 
+    }
 }

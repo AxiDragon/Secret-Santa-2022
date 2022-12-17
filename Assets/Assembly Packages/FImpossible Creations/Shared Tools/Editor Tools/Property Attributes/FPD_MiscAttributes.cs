@@ -1,11 +1,10 @@
 ﻿using UnityEngine;
 
-
 public class FPD_OverridableFloatAttribute : PropertyAttribute
 {
     public string BoolVarName;
-    public string TargetVarName;
     public int LabelWidth;
+    public string TargetVarName;
 
     public FPD_OverridableFloatAttribute(string boolVariableName, string targetVariableName, int labelWidth = 90)
     {
@@ -21,10 +20,10 @@ public class FPD_OverridableFloatAttribute : PropertyAttribute
 
 public class BackgroundColorAttribute : PropertyAttribute
 {
-    public float r;
-    public float g;
-    public float b;
     public float a;
+    public float b;
+    public float g;
+    public float r;
 
     public BackgroundColorAttribute()
     {
@@ -39,7 +38,7 @@ public class BackgroundColorAttribute : PropertyAttribute
         a = aA;
     }
 
-    public Color Color { get { return new Color(r, g, b, a); } }
+    public Color Color => new Color(r, g, b, a);
 }
 
 
@@ -60,8 +59,8 @@ public class FPD_WidthAttribute : PropertyAttribute
 public class FPD_IndentAttribute : PropertyAttribute
 {
     public int IndentCount = 1;
-    public int LabelsWidth = 0;
-    public int SpaceAfter = 0;
+    public int LabelsWidth;
+    public int SpaceAfter;
 
     public FPD_IndentAttribute(int indent = 1, int labelsWidth = 0, int spaceAfter = 0)
     {

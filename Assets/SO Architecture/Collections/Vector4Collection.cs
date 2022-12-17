@@ -8,5 +8,5 @@ namespace ScriptableObjectArchitecture
         order = SOArchitecture_Utility.ASSET_MENU_ORDER_COLLECTIONS + 12)]
     public class Vector4Collection : Collection<Vector4>
     {
-    } 
+    }
 }

@@ -1,11 +1,10 @@
-﻿using UnityEngine;
-
+﻿using System;
+using UnityEngine;
 
 namespace NodeCanvas.DialogueTrees
 {
-
     ///<summary> An interface to use for DialogueActors within a DialogueTree.</summary>
-	public interface IDialogueActor
+    public interface IDialogueActor
     {
         string name { get; }
         Texture2D portrait { get; }
@@ -16,40 +15,25 @@ namespace NodeCanvas.DialogueTrees
     }
 
     ///<summary>A basic rather limited implementation of IDialogueActor</summary>
-    [System.Serializable]
+    [Serializable]
     public class ProxyDialogueActor : IDialogueActor
     {
-
-        private string _name;
-        private Transform _transform;
-
-        public string name {
-            get { return _name; }
+        public ProxyDialogueActor(string name, Transform transform)
+        {
+            this.name = name;
+            this.transform = transform;
         }
 
-        public Texture2D portrait {
-            get { return null; }
-        }
+        public string name { get; }
 
-        public Sprite portraitSprite {
-            get { return null; }
-        }
+        public Texture2D portrait => null;
 
-        public Color dialogueColor {
-            get { return Color.white; }
-        }
+        public Sprite portraitSprite => null;
 
-        public Vector3 dialoguePosition {
-            get { return Vector3.zero; }
-        }
+        public Color dialogueColor => Color.white;
 
-        public Transform transform {
-            get { return _transform; }
-        }
+        public Vector3 dialoguePosition => Vector3.zero;
 
-        public ProxyDialogueActor(string name, Transform transform) {
-            this._name = name;
-            this._transform = transform;
-        }
+        public Transform transform { get; }
     }
 }

@@ -1,90 +1,94 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Reflection;
+using NodeCanvas.Editor;
 using NodeCanvas.Framework;
 using NodeCanvas.Framework.Internal;
 using ParadoxNotion;
 using ParadoxNotion.Design;
+using UnityEditor;
 using UnityEngine;
-
 
 namespace NodeCanvas.Tasks.Conditions
 {
-
     [Name("Check Function (Desktop Only)")]
     [Category("✫ Reflected/Faster Versions (Desktop Platforms Only)")]
-    [Description("This version works in destop/JIT platform only.\n\nCall a function with none or up to 6 parameters on a component and return whether or not the return value is equal to the check value")]
+    [Description(
+        "This version works in destop/JIT platform only.\n\nCall a function with none or up to 6 parameters on a component and return whether or not the return value is equal to the check value")]
     public class CheckFunction : ConditionTask
     {
+        [SerializeField] protected BBParameter checkValue;
 
-        [SerializeField]
-        protected ReflectedFunctionWrapper functionWrapper;
-        [SerializeField]
-        protected BBParameter checkValue;
-        [SerializeField]
-        protected CompareMethod comparison;
+        [SerializeField] protected CompareMethod comparison;
 
-        private MethodInfo targetMethod { get { return functionWrapper != null ? functionWrapper.GetMethod() : null; } }
+        [SerializeField] protected ReflectedFunctionWrapper functionWrapper;
 
-        public override System.Type agentType {
+        private MethodInfo targetMethod => functionWrapper != null ? functionWrapper.GetMethod() : null;
+
+        public override Type agentType
+        {
             get
             {
-                if ( targetMethod == null ) { return typeof(Transform); }
+                if (targetMethod == null) return typeof(Transform);
                 return targetMethod.IsStatic ? null : targetMethod.RTReflectedOrDeclaredType();
             }
         }
 
-        protected override string info {
+        protected override string info
+        {
             get
             {
-                if ( functionWrapper == null ) { return "No Method Selected"; }
-                if ( targetMethod == null ) { return functionWrapper.AsString().FormatError(); }
+                if (functionWrapper == null) return "No Method Selected";
+                if (targetMethod == null) return functionWrapper.AsString().FormatError();
                 var variables = functionWrapper.GetVariables();
                 var paramInfo = "";
-                for ( var i = 1; i < variables.Length; i++ ) {
-                    paramInfo += ( i != 1 ? ", " : "" ) + variables[i].ToString();
-                }
+                for (var i = 1; i < variables.Length; i++) paramInfo += (i != 1 ? ", " : "") + variables[i];
                 var mInfo = targetMethod.IsStatic ? targetMethod.RTReflectedOrDeclaredType().FriendlyName() : agentInfo;
-                return string.Format("{0}.{1}({2}){3}", mInfo, targetMethod.Name, paramInfo, OperationTools.GetCompareString(comparison) + checkValue);
+                return string.Format("{0}.{1}({2}){3}", mInfo, targetMethod.Name, paramInfo,
+                    OperationTools.GetCompareString(comparison) + checkValue);
             }
         }
 
-        public override void OnValidate(ITaskSystem ownerSystem) {
-            if ( functionWrapper != null && functionWrapper.HasChanged() ) {
-                SetMethod(functionWrapper.GetMethod());
-            }
+        public override void OnValidate(ITaskSystem ownerSystem)
+        {
+            if (functionWrapper != null && functionWrapper.HasChanged()) SetMethod(functionWrapper.GetMethod());
         }
 
         //store the method info on agent set for performance
-        protected override string OnInit() {
-            if ( targetMethod == null ) { return "Missing Method"; }
+        protected override string OnInit()
+        {
+            if (targetMethod == null) return "Missing Method";
 
-            try {
+            try
+            {
                 functionWrapper.Init(targetMethod.IsStatic ? null : agent);
                 return null;
             }
-            catch { return "CheckFunction Error"; }
+            catch
+            {
+                return "CheckFunction Error";
+            }
         }
 
         //do it by invoking method
-        protected override bool OnCheck() {
+        protected override bool OnCheck()
+        {
+            if (functionWrapper == null) return true;
 
-            if ( functionWrapper == null ) {
-                return true;
-            }
+            if (checkValue.varType == typeof(float))
+                return OperationTools.Compare((float)functionWrapper.Call(), (float)checkValue.value, comparison,
+                    0.05f);
 
-            if ( checkValue.varType == typeof(float) ) {
-                return OperationTools.Compare((float)functionWrapper.Call(), (float)checkValue.value, comparison, 0.05f);
-            }
-
-            if ( checkValue.varType == typeof(int) ) {
+            if (checkValue.varType == typeof(int))
                 return OperationTools.Compare((int)functionWrapper.Call(), (int)checkValue.value, comparison);
-            }
 
             return ObjectUtils.AnyEquals(functionWrapper.Call(), checkValue.value);
         }
 
-        void SetMethod(MethodInfo method) {
-            if ( method != null ) {
+        private void SetMethod(MethodInfo method)
+        {
+            if (method != null)
+            {
                 UndoUtility.RecordObject(ownerSystem.contextObject, "Set Reflection Member");
                 functionWrapper = ReflectedFunctionWrapper.Create(method, blackboard);
                 checkValue = BBParameter.CreateInstance(method.ReturnType, blackboard);
@@ -93,46 +97,52 @@ namespace NodeCanvas.Tasks.Conditions
         }
 
 
-        ///----------------------------------------------------------------------------------------------
-        ///---------------------------------------UNITY EDITOR-------------------------------------------
+        /// ----------------------------------------------------------------------------------------------
+        /// ---------------------------------------UNITY EDITOR-------------------------------------------
 #if UNITY_EDITOR
-
-        protected override void OnTaskInspectorGUI() {
-
-            if ( !Application.isPlaying && GUILayout.Button("Select Method") ) {
-                var menu = new UnityEditor.GenericMenu();
-                if ( agent != null ) {
-                    foreach ( var comp in agent.GetComponents(typeof(Component)).Where(c => !c.hideFlags.HasFlag(HideFlags.HideInInspector)) ) {
-                        menu = EditorUtils.GetInstanceMethodSelectionMenu(comp.GetType(), typeof(object), typeof(object), SetMethod, 6, false, true, menu);
-                    }
+        protected override void OnTaskInspectorGUI()
+        {
+            if (!Application.isPlaying && GUILayout.Button("Select Method"))
+            {
+                var menu = new GenericMenu();
+                if (agent != null)
+                {
+                    foreach (var comp in agent.GetComponents(typeof(Component))
+                                 .Where(c => !c.hideFlags.HasFlag(HideFlags.HideInInspector)))
+                        menu = EditorUtils.GetInstanceMethodSelectionMenu(comp.GetType(), typeof(object),
+                            typeof(object), SetMethod, 6, false, true, menu);
                     menu.AddSeparator("/");
                 }
-                foreach ( var t in TypePrefs.GetPreferedTypesList(typeof(object)) ) {
-                    menu = EditorUtils.GetStaticMethodSelectionMenu(t, typeof(object), typeof(object), SetMethod, 6, false, true, menu);
-                    if ( typeof(UnityEngine.Component).IsAssignableFrom(t) ) {
-                        menu = EditorUtils.GetInstanceMethodSelectionMenu(t, typeof(object), typeof(object), SetMethod, 6, false, true, menu);
-                    }
+
+                foreach (var t in TypePrefs.GetPreferedTypesList(typeof(object)))
+                {
+                    menu = EditorUtils.GetStaticMethodSelectionMenu(t, typeof(object), typeof(object), SetMethod, 6,
+                        false, true, menu);
+                    if (typeof(Component).IsAssignableFrom(t))
+                        menu = EditorUtils.GetInstanceMethodSelectionMenu(t, typeof(object), typeof(object), SetMethod,
+                            6, false, true, menu);
                 }
-                menu.ShowAsBrowser("Select Method", this.GetType());
+
+                menu.ShowAsBrowser("Select Method", GetType());
                 Event.current.Use();
             }
 
-            if ( targetMethod != null ) {
+            if (targetMethod != null)
+            {
                 GUILayout.BeginVertical("box");
-                UnityEditor.EditorGUILayout.LabelField("Type", targetMethod.RTReflectedOrDeclaredType().FriendlyName());
-                UnityEditor.EditorGUILayout.LabelField("Method", targetMethod.Name);
+                EditorGUILayout.LabelField("Type", targetMethod.RTReflectedOrDeclaredType().FriendlyName());
+                EditorGUILayout.LabelField("Method", targetMethod.Name);
                 GUILayout.EndVertical();
 
                 var paramNames = targetMethod.GetParameters().Select(p => p.Name.SplitCamelCase()).ToArray();
                 var variables = functionWrapper.GetVariables();
-                for ( var i = 0; i < paramNames.Length; i++ ) {
-                    NodeCanvas.Editor.BBParameterEditor.ParameterField(paramNames[i], variables[i + 1]);
-                }
+                for (var i = 0; i < paramNames.Length; i++)
+                    BBParameterEditor.ParameterField(paramNames[i], variables[i + 1]);
 
                 GUI.enabled = checkValue.varType == typeof(float) || checkValue.varType == typeof(int);
-                comparison = (CompareMethod)UnityEditor.EditorGUILayout.EnumPopup("Comparison", comparison);
+                comparison = (CompareMethod)EditorGUILayout.EnumPopup("Comparison", comparison);
                 GUI.enabled = true;
-                NodeCanvas.Editor.BBParameterEditor.ParameterField("Check Value", checkValue);
+                BBParameterEditor.ParameterField("Check Value", checkValue);
             }
         }
 

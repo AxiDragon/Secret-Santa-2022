@@ -1,10 +1,13 @@
+using System;
 using UnityEngine;
 using UnityEngine.Events;
 
 namespace ScriptableObjectArchitecture
 {
-    [System.Serializable]
-    public class Vector2Event : UnityEvent<Vector2> { }
+    [Serializable]
+    public class Vector2Event : UnityEvent<Vector2>
+    {
+    }
 
     [CreateAssetMenu(
         fileName = "Vector2Variable.asset",
@@ -12,5 +15,5 @@ namespace ScriptableObjectArchitecture
         order = SOArchitecture_Utility.ASSET_MENU_ORDER_COLLECTIONS + 10)]
     public sealed class Vector2Variable : BaseVariable<Vector2, Vector2Event>
     {
-    } 
+    }
 }

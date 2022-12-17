@@ -2,16 +2,19 @@ using System;
 using System.Runtime.InteropServices;
 using UnityEngine;
 
-namespace FullscreenEditor.Windows {
-    [System.Serializable]
+namespace FullscreenEditor.Windows
+{
+    [Serializable]
     [StructLayout(LayoutKind.Sequential)]
-    internal struct NativeRect {
+    internal struct NativeRect
+    {
         public int left;
         public int top;
         public int right;
         public int bottom;
 
-        public static implicit operator Rect(NativeRect other) {
+        public static implicit operator Rect(NativeRect other)
+        {
             return Rect.MinMaxRect(
                 other.left,
                 other.top,
@@ -20,20 +23,21 @@ namespace FullscreenEditor.Windows {
             );
         }
 
-        public static implicit operator NativeRect(Rect other) {
-            return new NativeRect {
+        public static implicit operator NativeRect(Rect other)
+        {
+            return new NativeRect
+            {
                 left = (int)other.xMin,
                 top = (int)other.yMin,
                 right = (int)other.xMax,
                 bottom = (int)other.yMax
             };
         }
-
     }
 
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
-    internal struct MonitorInfoEx {
-
+    internal struct MonitorInfoEx
+    {
         private const int CCHDEVICENAME = 0x20;
 
         public int size;
@@ -44,18 +48,20 @@ namespace FullscreenEditor.Windows {
         [MarshalAs(UnmanagedType.ByValTStr, SizeConst = CCHDEVICENAME)]
         public string DeviceName;
 
-        public void Init() {
-            this.size = 40 + 1 * CCHDEVICENAME;
-            this.DeviceName = string.Empty;
+        public void Init()
+        {
+            size = 40 + 1 * CCHDEVICENAME;
+            DeviceName = string.Empty;
         }
-
     }
 
-    [System.Serializable]
+    [Serializable]
     [StructLayout(LayoutKind.Sequential)]
-    internal struct DevMode {
+    internal struct DevMode
+    {
         [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 0x20)]
         public string dmDeviceName;
+
         public short dmSpecVersion;
         public short dmDriverVersion;
         public short dmSize;
@@ -70,8 +76,10 @@ namespace FullscreenEditor.Windows {
         public short dmYResolution;
         public short dmTTOption;
         public short dmCollate;
+
         [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 0x20)]
         public string dmFormName;
+
         public short dmLogPixels;
         public int dmBitsPerPel;
         public int dmPelsWidth;
@@ -89,39 +97,48 @@ namespace FullscreenEditor.Windows {
     }
 
     [Flags]
-    internal enum DisplayDeviceStateFlags : int {
+    internal enum DisplayDeviceStateFlags
+    {
         /// <summary>The device is part of the desktop.</summary>
         AttachedToDesktop = 0x1,
         MultiDriver = 0x2,
+
         /// <summary>The device is part of the desktop.</summary>
         PrimaryDevice = 0x4,
+
         /// <summary>Represents a pseudo device used to mirror application drawing for remoting or other purposes.</summary>
         MirroringDriver = 0x8,
+
         /// <summary>The device is VGA compatible.</summary>
         VGACompatible = 0x10,
+
         /// <summary>The device is removable; it cannot be the primary display.</summary>
         Removable = 0x20,
+
         /// <summary>The device has more display modes than its output devices support.</summary>
         ModesPruned = 0x8000000,
         Remote = 0x4000000,
         Disconnect = 0x2000000
     }
 
-    [System.Serializable]
+    [Serializable]
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
-    internal struct DisplayDevice {
-        [MarshalAs(UnmanagedType.U4)]
-        public int cb;
+    internal struct DisplayDevice
+    {
+        [MarshalAs(UnmanagedType.U4)] public int cb;
+
         [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
         public string DeviceName;
+
         [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]
         public string DeviceString;
-        [MarshalAs(UnmanagedType.U4)]
-        public DisplayDeviceStateFlags StateFlags;
+
+        [MarshalAs(UnmanagedType.U4)] public DisplayDeviceStateFlags StateFlags;
+
         [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]
         public string DeviceID;
+
         [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]
         public string DeviceKey;
     }
-
 }

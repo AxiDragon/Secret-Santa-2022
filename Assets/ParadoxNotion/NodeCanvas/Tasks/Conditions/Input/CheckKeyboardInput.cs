@@ -1,48 +1,44 @@
 using NodeCanvas.Framework;
 using ParadoxNotion;
 using ParadoxNotion.Design;
+using UnityEditor;
 using UnityEngine;
-
 
 namespace NodeCanvas.Tasks.Conditions
 {
-
     [Category("Input (Legacy System)")]
     public class CheckKeyboardInput : ConditionTask
     {
-
-        public PressTypes pressType = PressTypes.Down;
         public KeyCode key = KeyCode.Space;
 
-        protected override string info {
-            get { return pressType.ToString() + " " + key.ToString(); }
-        }
+        public PressTypes pressType = PressTypes.Down;
 
-        protected override bool OnCheck() {
+        protected override string info => pressType + " " + key;
 
-            if ( pressType == PressTypes.Down )
+        protected override bool OnCheck()
+        {
+            if (pressType == PressTypes.Down)
                 return Input.GetKeyDown(key);
 
-            if ( pressType == PressTypes.Up )
+            if (pressType == PressTypes.Up)
                 return Input.GetKeyUp(key);
 
-            if ( pressType == PressTypes.Pressed )
+            if (pressType == PressTypes.Pressed)
                 return Input.GetKey(key);
 
             return false;
         }
 
 
-        ///----------------------------------------------------------------------------------------------
-        ///---------------------------------------UNITY EDITOR-------------------------------------------
+        /// ----------------------------------------------------------------------------------------------
+        /// ---------------------------------------UNITY EDITOR-------------------------------------------
 #if UNITY_EDITOR
-
-        protected override void OnTaskInspectorGUI() {
-
-            UnityEditor.EditorGUILayout.BeginHorizontal();
-            pressType = (PressTypes)UnityEditor.EditorGUILayout.EnumPopup(pressType);
-            key = (KeyCode)UnityEditor.EditorGUILayout.EnumPopup(key);
-            UnityEditor.EditorGUILayout.EndHorizontal();
+        protected override void OnTaskInspectorGUI()
+        {
+            EditorGUILayout.BeginHorizontal();
+            pressType = (PressTypes)EditorGUILayout.EnumPopup(pressType);
+            key = (KeyCode)EditorGUILayout.EnumPopup(key);
+            EditorGUILayout.EndHorizontal();
         }
 
 #endif

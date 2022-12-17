@@ -1,9 +1,10 @@
-﻿using UnityEngine.Events;
+﻿using System;
+using UnityEngine.Events;
 
 namespace ScriptableObjectArchitecture
 {
-    [System.Serializable]
+    [Serializable]
     public sealed class SByteUnityEvent : UnityEvent<sbyte>
     {
-    } 
+    }
 }

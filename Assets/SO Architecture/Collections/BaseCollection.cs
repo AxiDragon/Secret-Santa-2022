@@ -1,5 +1,5 @@
-﻿using System.Collections;
-using Type = System.Type;
+﻿using System;
+using System.Collections;
 
 namespace ScriptableObjectArchitecture
 {
@@ -7,17 +7,11 @@ namespace ScriptableObjectArchitecture
     {
         public object this[int index]
         {
-            get
-            {
-                return List[index];
-            }
-            set
-            {
-                List[index] = value;
-            }
+            get => List[index];
+            set => List[index] = value;
         }
 
-        public int Count { get { return List.Count; } }
+        public int Count => List.Count;
 
         public abstract IList List { get; }
         public abstract Type Type { get; }
@@ -26,9 +20,10 @@ namespace ScriptableObjectArchitecture
         {
             return List.GetEnumerator();
         }
+
         public bool Contains(object obj)
         {
             return List.Contains(obj);
         }
-	}
+    }
 }

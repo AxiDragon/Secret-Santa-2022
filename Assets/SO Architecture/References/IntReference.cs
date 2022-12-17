@@ -1,9 +1,16 @@
-﻿namespace ScriptableObjectArchitecture
+﻿using System;
+
+namespace ScriptableObjectArchitecture
 {
-    [System.Serializable]
+    [Serializable]
     public sealed class IntReference : BaseReference<int, IntVariable>
     {
-        public IntReference() : base() { }
-        public IntReference(int value) : base(value) { }
-    } 
+        public IntReference()
+        {
+        }
+
+        public IntReference(int value) : base(value)
+        {
+        }
+    }
 }

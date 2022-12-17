@@ -1,14 +1,16 @@
 ﻿using UnityEngine;
 
 /// <summary>
-/// FM: Class containing few handy easing functions
+///     FM: Class containing few handy easing functions
 /// </summary>
 public static class FEasing
 {
+    public delegate float Function(float s, float e, float v, float extraParameter = 1f);
+
     #region Example of how to use easings
 
     /// <summary>
-    /// Example how to use easing function
+    ///     Example how to use easing function
     /// </summary>
     //static System.Collections.IEnumerator Example()
     //{
@@ -61,13 +63,32 @@ public static class FEasing
         EaseOutExpo,
         EaseInOutExpo,
 
-        Linear,
+        Linear
+    }
+
+    public static Function GetEasingFunction(EFease easingFunction)
+    {
+        if (easingFunction == EFease.EaseInCubic) return EaseInCubic;
+        if (easingFunction == EFease.EaseOutCubic) return EaseOutCubic;
+        if (easingFunction == EFease.EaseInOutCubic) return EaseInOutCubic;
+
+        if (easingFunction == EFease.EaseInElastic) return EaseInElastic;
+        if (easingFunction == EFease.EaseOutElastic) return EaseOutElastic;
+        if (easingFunction == EFease.EaseInOutElastic) return EaseInOutElastic;
+
+        if (easingFunction == EFease.EaseInExpo) return EaseInExpo;
+        if (easingFunction == EFease.EaseOutExpo) return EaseOutExpo;
+        if (easingFunction == EFease.EaseInOutExpo) return EaseInOutExpo;
+
+        if (easingFunction == EFease.Linear) return Linear;
+
+        return null;
     }
 
     #region Easing Methods
 
     /// <summary>
-    /// Cubic smooth ease, ignore argument is for delegate to work with extra arguments
+    ///     Cubic smooth ease, ignore argument is for delegate to work with extra arguments
     /// </summary>
     public static float EaseInCubic(float start, float end, float value, float ignore = 1f)
     {
@@ -100,8 +121,8 @@ public static class FEasing
     {
         end -= start;
 
-        float d = 1f;
-        float p = d * .3f * rangeMul;
+        var d = 1f;
+        var p = d * .3f * rangeMul;
         float s;
         float a = 0;
 
@@ -119,7 +140,7 @@ public static class FEasing
             s = p / (2 * Mathf.PI) * Mathf.Asin(end / a);
         }
 
-        return (a * Mathf.Pow(2, -10 * value * rangeMul) * Mathf.Sin((value * d - s) * (2 * Mathf.PI) / p) + end + start);
+        return a * Mathf.Pow(2, -10 * value * rangeMul) * Mathf.Sin((value * d - s) * (2 * Mathf.PI) / p) + end + start;
     }
 
 
@@ -127,8 +148,8 @@ public static class FEasing
     {
         end -= start;
 
-        float d = 1f;
-        float p = d * .3f * rangeMul;
+        var d = 1f;
+        var p = d * .3f * rangeMul;
         float s;
         float a = 0;
 
@@ -139,14 +160,15 @@ public static class FEasing
         if (a == 0f || a < Mathf.Abs(end))
         {
             a = end;
-            s = (p / 4) * rangeMul;
+            s = p / 4 * rangeMul;
         }
         else
         {
             s = p / (2 * Mathf.PI) * Mathf.Asin(end / a);
         }
 
-        return -(a * Mathf.Pow(2, 10 * rangeMul * (value -= 1)) * Mathf.Sin((value * d - s) * (2 * Mathf.PI) / p)) + start;
+        return -(a * Mathf.Pow(2, 10 * rangeMul * (value -= 1)) * Mathf.Sin((value * d - s) * (2 * Mathf.PI) / p)) +
+               start;
     }
 
 
@@ -154,8 +176,8 @@ public static class FEasing
     {
         end -= start;
 
-        float d = 1f;
-        float p = d * .3f * rangeMul;
+        var d = 1f;
+        var p = d * .3f * rangeMul;
         float s;
         float a = 0;
 
@@ -173,8 +195,11 @@ public static class FEasing
             s = p / (2 * Mathf.PI) * Mathf.Asin(end / a);
         }
 
-        if (value < 1) return -0.5f * (a * Mathf.Pow(2, 10 * (value -= 1)) * Mathf.Sin((value * d - s) * (2 * Mathf.PI) / p)) + start;
-        return a * Mathf.Pow(2, -10 * rangeMul * (value -= 1)) * Mathf.Sin((value * d - s) * (2 * Mathf.PI) / p) * 0.5f + end + start;
+        if (value < 1)
+            return -0.5f * (a * Mathf.Pow(2, 10 * (value -= 1)) * Mathf.Sin((value * d - s) * (2 * Mathf.PI) / p)) +
+                   start;
+        return a * Mathf.Pow(2, -10 * rangeMul * (value -= 1)) * Mathf.Sin((value * d - s) * (2 * Mathf.PI) / p) *
+            0.5f + end + start;
     }
 
 
@@ -205,26 +230,4 @@ public static class FEasing
     }
 
     #endregion
-
-    public delegate float Function(float s, float e, float v, float extraParameter = 1f);
-
-    public static Function GetEasingFunction(EFease easingFunction)
-    {
-        if (easingFunction == EFease.EaseInCubic) return EaseInCubic;
-        if (easingFunction == EFease.EaseOutCubic) return EaseOutCubic;
-        if (easingFunction == EFease.EaseInOutCubic) return EaseInOutCubic;
-
-        if (easingFunction == EFease.EaseInElastic) return EaseInElastic;
-        if (easingFunction == EFease.EaseOutElastic) return EaseOutElastic;
-        if (easingFunction == EFease.EaseInOutElastic) return EaseInOutElastic;
-
-        if (easingFunction == EFease.EaseInExpo) return EaseInExpo;
-        if (easingFunction == EFease.EaseOutExpo) return EaseOutExpo;
-        if (easingFunction == EFease.EaseInOutExpo) return EaseInOutExpo;
-
-        if (easingFunction == EFease.Linear) return Linear;
-
-        return null;
-    }
 }
-

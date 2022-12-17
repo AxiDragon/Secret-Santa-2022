@@ -2,145 +2,175 @@
 
 namespace ParadoxNotion.Design
 {
-
     ///<summary>Derive this to create custom attributes to be drawn with an AttributeDrawer<T>.</summary>
     [AttributeUsage(AttributeTargets.Field)]
-    abstract public class DrawerAttribute : Attribute
+    public abstract class DrawerAttribute : Attribute
     {
-        virtual public int priority { get { return int.MaxValue; } }
-        virtual public bool isDecorator { get { return false; } }
+        public virtual int priority => int.MaxValue;
+        public virtual bool isDecorator => false;
     }
 
-    ///----------------------------------------------------------------------------------------------
-
-    ///<summary>Will dim control for bool, int, float, string if its default value (or empty for string)</summary>
+    /// ----------------------------------------------------------------------------------------------
+    /// <summary>Will dim control for bool, int, float, string if its default value (or empty for string)</summary>
     [AttributeUsage(AttributeTargets.Field)]
     public class HeaderAttribute : DrawerAttribute
     {
-        readonly public string title;
-        public override bool isDecorator { get { return true; } }
-        public HeaderAttribute(string title) {
+        public readonly string title;
+
+        public HeaderAttribute(string title)
+        {
             this.title = title;
         }
+
+        public override bool isDecorator => true;
     }
 
     ///<summary>Will dim control for bool, int, float, string if its default value (or empty for string)</summary>
     [AttributeUsage(AttributeTargets.Field)]
     public class DimIfDefaultAttribute : DrawerAttribute
     {
-        public override bool isDecorator { get { return true; } }
-        public override int priority { get { return 0; } }
+        public override bool isDecorator => true;
+        public override int priority => 0;
     }
 
     ///<summary>Use on top of any field to show it only if the provided field is equal to the provided check value</summary>
     [AttributeUsage(AttributeTargets.Field)]
     public class ShowIfAttribute : DrawerAttribute
     {
-        readonly public string fieldName;
-        readonly public int checkValue;
-        public override bool isDecorator { get { return true; } }
-        public override int priority { get { return 1; } }
-        public ShowIfAttribute(string fieldName, int checkValue) {
+        public readonly int checkValue;
+        public readonly string fieldName;
+
+        public ShowIfAttribute(string fieldName, int checkValue)
+        {
             this.fieldName = fieldName;
             this.checkValue = checkValue;
         }
+
+        public override bool isDecorator => true;
+        public override int priority => 1;
     }
 
     ///<summary>Helper attribute. Denotes that the field is required not to be null or string.empty</summary>
     [AttributeUsage(AttributeTargets.Field)]
     public class RequiredFieldAttribute : DrawerAttribute
     {
-        public override bool isDecorator { get { return false; } }
-        public override int priority { get { return 2; } }
+        public override bool isDecorator => false;
+        public override int priority => 2;
     }
 
     ///<summary>Show a button above field</summary>
     [AttributeUsage(AttributeTargets.Field)]
     public class ShowButtonAttribute : DrawerAttribute
     {
-        readonly public string buttonTitle;
-        readonly public string methodName;
-        public override bool isDecorator { get { return true; } }
-        public override int priority { get { return 3; } }
-        public ShowButtonAttribute(string buttonTitle, string methodnameCallback) {
+        public readonly string buttonTitle;
+        public readonly string methodName;
+
+        public ShowButtonAttribute(string buttonTitle, string methodnameCallback)
+        {
             this.buttonTitle = buttonTitle;
-            this.methodName = methodnameCallback;
+            methodName = methodnameCallback;
         }
+
+        public override bool isDecorator => true;
+        public override int priority => 3;
     }
 
     ///<summary>Will invoke a callback method when the field is changed</summary>
     [AttributeUsage(AttributeTargets.Field)]
     public class CallbackAttribute : DrawerAttribute
     {
-        readonly public string methodName;
-        public override bool isDecorator { get { return true; } }
-        public override int priority { get { return 4; } }
-        public CallbackAttribute(string methodName) {
+        public readonly string methodName;
+
+        public CallbackAttribute(string methodName)
+        {
             this.methodName = methodName;
         }
+
+        public override bool isDecorator => true;
+        public override int priority => 4;
     }
 
-    ///----------------------------------------------------------------------------------------------
-
-    ///<summary>Will clamp float or int value to min</summary>
+    /// ----------------------------------------------------------------------------------------------
+    /// <summary>Will clamp float or int value to min</summary>
     [AttributeUsage(AttributeTargets.Field)]
     public class MinValueAttribute : DrawerAttribute
     {
-        public override int priority { get { return 5; } }
-        readonly public float min;
-        public MinValueAttribute(float min) {
+        public readonly float min;
+
+        public MinValueAttribute(float min)
+        {
             this.min = min;
         }
-        public MinValueAttribute(int min) {
+
+        public MinValueAttribute(int min)
+        {
             this.min = min;
         }
+
+        public override int priority => 5;
     }
 
-    ///----------------------------------------------------------------------------------------------
-
-    ///<summary>Makes float, int or string field show in a delayed control</summary>
+    /// ----------------------------------------------------------------------------------------------
+    /// <summary>Makes float, int or string field show in a delayed control</summary>
     [AttributeUsage(AttributeTargets.Field)]
-    public class DelayedFieldAttribute : DrawerAttribute { }
+    public class DelayedFieldAttribute : DrawerAttribute
+    {
+    }
 
     ///<summary>Makes the int field show as layerfield</summary>
     [AttributeUsage(AttributeTargets.Field)]
-    public class LayerFieldAttribute : DrawerAttribute { }
+    public class LayerFieldAttribute : DrawerAttribute
+    {
+    }
 
     ///<summary>Makes the string field show as tagfield</summary>
     [AttributeUsage(AttributeTargets.Field)]
-    public class TagFieldAttribute : DrawerAttribute { }
+    public class TagFieldAttribute : DrawerAttribute
+    {
+    }
 
     ///<summary>Makes the string field show as text field with specified number of lines</summary>
     [AttributeUsage(AttributeTargets.Field)]
     public class TextAreaFieldAttribute : DrawerAttribute
     {
-        readonly public int numberOfLines;
-        public TextAreaFieldAttribute(int numberOfLines) {
+        public readonly int numberOfLines;
+
+        public TextAreaFieldAttribute(int numberOfLines)
+        {
             this.numberOfLines = numberOfLines;
         }
     }
 
-    ///<summary>Use on top of any type of field to restict values to the provided ones through a popup by providing a params array of options.</summary>
+    /// <summary>
+    ///     Use on top of any type of field to restict values to the provided ones through a popup by providing a params
+    ///     array of options.
+    /// </summary>
     [AttributeUsage(AttributeTargets.Field)]
     public class PopupFieldAttribute : DrawerAttribute
     {
-        readonly public object[] options;
-        public PopupFieldAttribute(params object[] options) {
+        public readonly object[] options;
+
+        public PopupFieldAttribute(params object[] options)
+        {
             this.options = options;
         }
     }
 
     ///<summary>Makes the float or integer field show as slider</summary>
-	[AttributeUsage(AttributeTargets.Field)]
+    [AttributeUsage(AttributeTargets.Field)]
     public class SliderFieldAttribute : DrawerAttribute
     {
-        readonly public float min;
-        readonly public float max;
-        public SliderFieldAttribute(float min, float max) {
+        public readonly float max;
+        public readonly float min;
+
+        public SliderFieldAttribute(float min, float max)
+        {
             this.min = min;
             this.max = max;
         }
-        public SliderFieldAttribute(int min, int max) {
+
+        public SliderFieldAttribute(int min, int max)
+        {
             this.min = min;
             this.max = max;
         }
@@ -148,7 +178,7 @@ namespace ParadoxNotion.Design
 
     ///<summary>Forces the field to show as a Unity Object field. Usefull for interface fields</summary>
     [AttributeUsage(AttributeTargets.Field)]
-    public class ForceObjectFieldAttribute : DrawerAttribute { }
-
-
+    public class ForceObjectFieldAttribute : DrawerAttribute
+    {
+    }
 }

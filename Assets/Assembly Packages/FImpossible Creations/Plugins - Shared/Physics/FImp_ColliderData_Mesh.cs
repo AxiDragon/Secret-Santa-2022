@@ -4,9 +4,11 @@ namespace FIMSpace
 {
     public class FImp_ColliderData_Mesh : FImp_ColliderData_Base
     {
-        public MeshCollider Mesh { get; private set; }
-        public PolygonCollider2D Poly2D { get; private set; }
-        private ContactFilter2D filter;
+        private readonly ContactFilter2D filter;
+
+#if UNITY_2019_1_OR_NEWER
+        private readonly RaycastHit2D[] r;
+#endif
 
         public FImp_ColliderData_Mesh(MeshCollider collider)
         {
@@ -31,12 +33,10 @@ namespace FIMSpace
 #if UNITY_2019_1_OR_NEWER
             r = new RaycastHit2D[1];
 #endif
-
         }
 
-#if UNITY_2019_1_OR_NEWER
-        private RaycastHit2D[] r;
-#endif
+        public MeshCollider Mesh { get; }
+        public PolygonCollider2D Poly2D { get; }
 
         public override bool PushIfInside(ref Vector3 segmentPosition, float segmentRadius, Vector3 segmentOffset)
         {
@@ -45,13 +45,14 @@ namespace FIMSpace
                 if (Mesh.convex)
                 {
                     Vector3 closest;
-                    Vector3 positionOffsetted = segmentPosition + segmentOffset;
-                    float castMul = 1f;
+                    var positionOffsetted = segmentPosition + segmentOffset;
+                    var castMul = 1f;
 
-                    closest = Physics.ClosestPoint(positionOffsetted, Mesh, Mesh.transform.position, Mesh.transform.rotation);
+                    closest = Physics.ClosestPoint(positionOffsetted, Mesh, Mesh.transform.position,
+                        Mesh.transform.rotation);
                     if (Vector3.Distance(closest, positionOffsetted) > segmentRadius * 1.01f) return false;
 
-                    Vector2 dir = (closest - positionOffsetted);
+                    Vector2 dir = closest - positionOffsetted;
                     RaycastHit meshHit;
                     Mesh.Raycast(new Ray(positionOffsetted, dir.normalized), out meshHit, segmentRadius * castMul);
 
@@ -64,15 +65,15 @@ namespace FIMSpace
                 else
                 {
                     Vector3 closest;
-                    float plus = 0f;
+                    var plus = 0f;
 
-                    Vector3 positionOffsetted = segmentPosition + segmentOffset;
+                    var positionOffsetted = segmentPosition + segmentOffset;
 
                     closest = Mesh.ClosestPointOnBounds(positionOffsetted);
                     plus = (closest - Mesh.transform.position).magnitude;
 
-                    bool inside = false;
-                    float insideMul = 1f;
+                    var inside = false;
+                    var insideMul = 1f;
 
                     if (closest == positionOffsetted)
                     {
@@ -81,30 +82,31 @@ namespace FIMSpace
                         closest = Mesh.transform.position;
                     }
 
-                    Vector3 targeting = closest - positionOffsetted;
-                    Vector3 rayDirection = targeting.normalized;
-                    Vector3 rayOrigin = positionOffsetted - rayDirection * (segmentRadius * 2f + Mesh.bounds.extents.magnitude);
+                    var targeting = closest - positionOffsetted;
+                    var rayDirection = targeting.normalized;
+                    var rayOrigin = positionOffsetted -
+                                    rayDirection * (segmentRadius * 2f + Mesh.bounds.extents.magnitude);
 
-                    float rayDistance = targeting.magnitude + segmentRadius * 2f + plus + Mesh.bounds.extents.magnitude;
+                    var rayDistance = targeting.magnitude + segmentRadius * 2f + plus + Mesh.bounds.extents.magnitude;
 
                     if ((positionOffsetted - closest).magnitude < segmentRadius * insideMul)
                     {
-                        Ray ray = new Ray(rayOrigin, rayDirection);
+                        var ray = new Ray(rayOrigin, rayDirection);
 
                         RaycastHit hit;
                         if (Mesh.Raycast(ray, out hit, rayDistance))
                         {
-                            float hitToPointDist = (positionOffsetted - hit.point).magnitude;
+                            var hitToPointDist = (positionOffsetted - hit.point).magnitude;
 
                             if (hitToPointDist < segmentRadius * insideMul)
                             {
-
-                                Vector3 toNormal = hit.point - positionOffsetted;
+                                var toNormal = hit.point - positionOffsetted;
                                 Vector3 pushNormal;
 
-                                if (inside) pushNormal = toNormal + toNormal.normalized * segmentRadius; else pushNormal = toNormal - toNormal.normalized * segmentRadius;
+                                if (inside) pushNormal = toNormal + toNormal.normalized * segmentRadius;
+                                else pushNormal = toNormal - toNormal.normalized * segmentRadius;
 
-                                float dot = Vector3.Dot((hit.point - positionOffsetted).normalized, rayDirection);
+                                var dot = Vector3.Dot((hit.point - positionOffsetted).normalized, rayDirection);
                                 if (inside && dot > 0f) pushNormal = toNormal - toNormal.normalized * segmentRadius;
 
                                 segmentPosition = segmentPosition + pushNormal;
@@ -126,9 +128,10 @@ namespace FIMSpace
                 if (Poly2D.OverlapPoint(positionOffsetted))
                 {
                     // Collider inside polygon collider!
-                    Vector3 indir = Poly2D.bounds.center - (Vector3)positionOffsetted; indir.z = 0f;
-                    Ray r = new Ray(Poly2D.bounds.center - indir * Poly2D.bounds.max.magnitude, indir);
-                    float dist = 0f;
+                    var indir = Poly2D.bounds.center - (Vector3)positionOffsetted;
+                    indir.z = 0f;
+                    var r = new Ray(Poly2D.bounds.center - indir * Poly2D.bounds.max.magnitude, indir);
+                    var dist = 0f;
                     Poly2D.bounds.IntersectRay(r, out dist); // We've got partially correct point
                     if (dist > 0f)
                         closest = Poly2D.ClosestPoint(r.GetPoint(dist));
@@ -136,19 +139,19 @@ namespace FIMSpace
                         closest = Poly2D.ClosestPoint(positionOffsetted);
                 }
                 else
+                {
                     closest = Poly2D.ClosestPoint(positionOffsetted);
+                }
 
-                Vector2 dir = (closest - positionOffsetted).normalized;
-                int hits = Physics2D.Raycast(positionOffsetted, dir, filter, r, segmentRadius);
+                var dir = (closest - positionOffsetted).normalized;
+                var hits = Physics2D.Raycast(positionOffsetted, dir, filter, r, segmentRadius);
 
                 if (hits > 0)
-                {
                     if (r[0].transform == Transform)
                     {
                         segmentPosition = closest + r[0].normal * segmentRadius;
                         return true;
                     }
-                }
 #else
                 return false;
 #endif
@@ -158,40 +161,42 @@ namespace FIMSpace
         }
 
 
-
-        public static void PushOutFromMeshCollider(MeshCollider mesh, Collision collision, float segmentColliderRadius, ref Vector3 pos)
+        public static void PushOutFromMeshCollider(MeshCollider mesh, Collision collision, float segmentColliderRadius,
+            ref Vector3 pos)
         {
-            Vector3 collisionPoint = collision.contacts[0].point;
-            Vector3 pushNormal = collision.contacts[0].normal;
+            var collisionPoint = collision.contacts[0].point;
+            var pushNormal = collision.contacts[0].normal;
 
             RaycastHit info;
             // Doing cheap mesh raycast from outside to hit surface
-            if (mesh.Raycast(new Ray(pos + pushNormal * segmentColliderRadius * 2f, -pushNormal), out info, segmentColliderRadius * 5))
+            if (mesh.Raycast(new Ray(pos + pushNormal * segmentColliderRadius * 2f, -pushNormal), out info,
+                    segmentColliderRadius * 5))
             {
                 pushNormal = info.point - pos;
-                float pushMagn = pushNormal.sqrMagnitude;
-                if (pushMagn > 0 && pushMagn < segmentColliderRadius * segmentColliderRadius) pos = info.point - pushNormal * (segmentColliderRadius / Mathf.Sqrt(pushMagn)) * 0.9f;
+                var pushMagn = pushNormal.sqrMagnitude;
+                if (pushMagn > 0 && pushMagn < segmentColliderRadius * segmentColliderRadius)
+                    pos = info.point - pushNormal * (segmentColliderRadius / Mathf.Sqrt(pushMagn)) * 0.9f;
             }
             else
             {
                 pushNormal = collisionPoint - pos;
-                float pushMagn = pushNormal.sqrMagnitude;
-                if (pushMagn > 0 && pushMagn < segmentColliderRadius * segmentColliderRadius) pos = collisionPoint - pushNormal * (segmentColliderRadius / Mathf.Sqrt(pushMagn)) * 0.9f;
+                var pushMagn = pushNormal.sqrMagnitude;
+                if (pushMagn > 0 && pushMagn < segmentColliderRadius * segmentColliderRadius)
+                    pos = collisionPoint - pushNormal * (segmentColliderRadius / Mathf.Sqrt(pushMagn)) * 0.9f;
             }
         }
-
 
 
         public static void PushOutFromMesh(MeshCollider mesh, Collision collision, float pointRadius, ref Vector3 point)
         {
             Vector3 closest;
-            float plus = 0f;
+            var plus = 0f;
 
             closest = mesh.ClosestPointOnBounds(point);
             plus = (closest - mesh.transform.position).magnitude;
 
-            bool inside = false;
-            float insideMul = 1f;
+            var inside = false;
+            var insideMul = 1f;
 
             if (closest == point)
             {
@@ -200,41 +205,44 @@ namespace FIMSpace
                 closest = mesh.transform.position;
             }
 
-            Vector3 targeting = closest - point;
-            Vector3 rayDirection = targeting.normalized;
-            Vector3 rayOrigin = point - rayDirection * (pointRadius * 2f + mesh.bounds.extents.magnitude);
+            var targeting = closest - point;
+            var rayDirection = targeting.normalized;
+            var rayOrigin = point - rayDirection * (pointRadius * 2f + mesh.bounds.extents.magnitude);
 
-            float rayDistance = targeting.magnitude + pointRadius * 2f + plus + mesh.bounds.extents.magnitude;
+            var rayDistance = targeting.magnitude + pointRadius * 2f + plus + mesh.bounds.extents.magnitude;
 
             if ((point - closest).magnitude < pointRadius * insideMul)
             {
                 Vector3 collisionPoint;
 
                 if (!inside)
+                {
                     collisionPoint = collision.contacts[0].point;
+                }
                 else
                 {
-                    Ray ray = new Ray(rayOrigin, rayDirection);
+                    var ray = new Ray(rayOrigin, rayDirection);
                     RaycastHit hit;
-                    if (mesh.Raycast(ray, out hit, rayDistance)) collisionPoint = hit.point; else collisionPoint = collision.contacts[0].point;
+                    if (mesh.Raycast(ray, out hit, rayDistance)) collisionPoint = hit.point;
+                    else collisionPoint = collision.contacts[0].point;
                 }
 
-                float hitToPointDist = (point - collisionPoint).magnitude;
+                var hitToPointDist = (point - collisionPoint).magnitude;
 
                 if (hitToPointDist < pointRadius * insideMul)
                 {
-                    Vector3 toNormal = collisionPoint - point;
+                    var toNormal = collisionPoint - point;
                     Vector3 pushNormal;
 
-                    if (inside) pushNormal = toNormal + toNormal.normalized * pointRadius; else pushNormal = toNormal - toNormal.normalized * pointRadius;
+                    if (inside) pushNormal = toNormal + toNormal.normalized * pointRadius;
+                    else pushNormal = toNormal - toNormal.normalized * pointRadius;
 
-                    float dot = Vector3.Dot((collisionPoint - point).normalized, rayDirection);
+                    var dot = Vector3.Dot((collisionPoint - point).normalized, rayDirection);
                     if (inside && dot > 0f) pushNormal = toNormal - toNormal.normalized * pointRadius;
 
                     point = point + pushNormal;
                 }
             }
         }
-
     }
 }

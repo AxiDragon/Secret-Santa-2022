@@ -1,10 +1,13 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using UnityEngine.Events;
 
 namespace ScriptableObjectArchitecture
 {
-    [System.Serializable]
-    public class UIntEvent : UnityEvent<uint> { }
+    [Serializable]
+    public class UIntEvent : UnityEvent<uint>
+    {
+    }
 
     [CreateAssetMenu(
         fileName = "UnsignedIntVariable.asset",
@@ -12,21 +15,15 @@ namespace ScriptableObjectArchitecture
         order = SOArchitecture_Utility.ASSET_MENU_ORDER_COLLECTIONS + 16)]
     public class UIntVariable : BaseVariable<uint, UIntEvent>
     {
-        public override bool Clampable { get { return true; } }
+        public override bool Clampable => true;
+
         protected override uint ClampValue(uint value)
         {
             if (value.CompareTo(MinClampValue) < 0)
-            {
                 return MinClampValue;
-            }
-            else if (value.CompareTo(MaxClampValue) > 0)
-            {
+            if (value.CompareTo(MaxClampValue) > 0)
                 return MaxClampValue;
-            }
-            else
-            {
-                return value;
-            }
+            return value;
         }
-    } 
+    }
 }

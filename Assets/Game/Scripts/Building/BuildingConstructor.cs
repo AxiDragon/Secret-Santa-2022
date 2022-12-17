@@ -1,11 +1,8 @@
-using System;
 using System.Linq;
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-using UnityEngine.InputSystem;
 using DG.Tweening;
+using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.InputSystem;
 
 public class BuildingConstructor : MonoBehaviour
 {
@@ -15,15 +12,13 @@ public class BuildingConstructor : MonoBehaviour
     [SerializeField] private LayerMask raycastMask;
     [SerializeField] private UnityEvent activateBuildMode;
     [SerializeField] private UnityEvent deActivateBuildMode;
-    private Building previewBuilding;
+    private bool buildModeActive;
     private GridPoint closestGridPoint;
-    private bool buildModeActive = false;
+    private Building previewBuilding;
+
     public bool BuildModeActive
     {
-        get
-        {
-            return buildModeActive;
-        }
+        get => buildModeActive;
         set
         {
             buildModeActive = value;
@@ -50,10 +45,7 @@ public class BuildingConstructor : MonoBehaviour
 
     private GridPoint ClosestGridPoint
     {
-        get
-        {
-            return closestGridPoint;
-        }
+        get => closestGridPoint;
         set
         {
             var currentValue = closestGridPoint;
@@ -63,12 +55,11 @@ public class BuildingConstructor : MonoBehaviour
                 return;
 
             if (currentValue != value)
-            {
                 if (previewBuilding != null)
                     MovePreview(closestGridPoint);
-            }
         }
     }
+
     private void Update()
     {
         if (buildModeActive)
@@ -83,12 +74,12 @@ public class BuildingConstructor : MonoBehaviour
 
     private Vector3 GetMousePosition()
     {
-        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        var ray = Camera.main.ScreenPointToRay(Input.mousePosition);
         RaycastHit hit;
 
         Debug.DrawRay(ray.origin, ray.direction * 500f);
 
-        if (Physics.Raycast(ray, out hit, 500f, layerMask: raycastMask.value))
+        if (Physics.Raycast(ray, out hit, 500f, raycastMask.value))
         {
             print(hit.collider.name);
             return hit.point;
@@ -108,14 +99,14 @@ public class BuildingConstructor : MonoBehaviour
 
     public void Build(Building building)
     {
-        Building buildingInstance = Instantiate(building, ClosestGridPoint.transform);
+        var buildingInstance = Instantiate(building, ClosestGridPoint.transform);
         buildingInstance.transform.localPosition = Vector3.up * buildingInstance.buildingOffset;
         SpawnObjectEasing(buildingInstance.gameObject);
     }
 
     private static void SpawnObjectEasing(GameObject buildingInstance)
     {
-        float baseScale = buildingInstance.transform.localScale.x;
+        var baseScale = buildingInstance.transform.localScale.x;
         buildingInstance.transform.localScale = Vector3.zero;
         buildingInstance.transform.DOScale(baseScale, .5f).SetEase(Ease.OutBack);
     }
@@ -137,21 +128,15 @@ public class BuildingConstructor : MonoBehaviour
 
     private void ApplyPreviewMaterials(GameObject gameObject)
     {
-        List<Renderer> renderers = gameObject.GetComponentsInChildren<Renderer>().ToList();
+        var renderers = gameObject.GetComponentsInChildren<Renderer>().ToList();
 
-        if (gameObject.TryGetComponent(out Renderer baseRenderer))
+        if (gameObject.TryGetComponent(out Renderer baseRenderer)) renderers.Add(baseRenderer);
+
+        for (var i = 0; i < renderers.Count; i++)
         {
-            renderers.Add(baseRenderer);
-        }
+            var previewMaterials = new Material[renderers[i].materials.Length];
 
-        for (int i = 0; i < renderers.Count; i++)
-        {
-            Material[] previewMaterials = new Material[renderers[i].materials.Length];
-
-            for (int j = 0; j < previewMaterials.Length; j++)
-            {
-                previewMaterials[j] = previewMaterial;
-            }
+            for (var j = 0; j < previewMaterials.Length; j++) previewMaterials[j] = previewMaterial;
 
             renderers[i].materials = previewMaterials;
         }

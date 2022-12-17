@@ -1,78 +1,55 @@
 using UnityEditor;
 
-namespace JohnStairs.RCC.Character.ARPG {
+namespace JohnStairs.RCC.Character.ARPG
+{
     [CustomEditor(typeof(RPGMotorARPG))]
-    public class RPGMotorEditor : Editor {
-        bool showMovementSpeedSettings = true;
-        bool showRotationSettings = true;
-        bool showJumpingSettings = true;
-        bool showMovingGroundsSettings = true;
-        bool showMiscSettings = true;
+    public class RPGMotorEditor : Editor
+    {
+        private bool showJumpingSettings = true;
+        private bool showMiscSettings = true;
+        private bool showMovementSpeedSettings = true;
+        private bool showMovingGroundsSettings = true;
+        private bool showRotationSettings = true;
 
-        #region Movement speed variables
-        SerializedProperty RunSpeed;
-        SerializedProperty WalkSpeed;
-        SerializedProperty CrouchSpeed;
-        SerializedProperty SprintSpeedMultiplier;
-        SerializedProperty SwimSpeedMultiplier;
-        #endregion
+        public void OnEnable()
+        {
+            #region Movement speed variables
 
-        #region Rotation variables
-        SerializedProperty CompleteTurnWhileStanding;
-        SerializedProperty RotationTime;
-        #endregion
-
-        #region Jumping variables
-        SerializedProperty JumpHeight;
-        SerializedProperty EnableMidairJumps;
-        SerializedProperty AllowedMidairJumps;
-        SerializedProperty EnableMidairMovement;
-        SerializedProperty MidairSpeed;
-        #endregion
-
-        #region Moving grounds variables
-        SerializedProperty MoveWithMovingGround;
-        SerializedProperty RotateWithRotatingGround;
-        SerializedProperty GroundAffectsJumping;
-        #endregion
-
-        #region Misc variables
-        SerializedProperty IgnoredLayers;
-        SerializedProperty EnableSliding;
-        SerializedProperty SlidingTimeout;
-        SerializedProperty EnableCollisionMovement;
-        SerializedProperty SwimmingStartHeight;
-        SerializedProperty FlyingTimeout;
-        SerializedProperty GroundedTolerance;
-        SerializedProperty FallingThreshold;
-        SerializedProperty Gravity;
-        #endregion
-
-        public void OnEnable() {
-            #region Movement speed variables 
             RunSpeed = serializedObject.FindProperty("RunSpeed");
             WalkSpeed = serializedObject.FindProperty("WalkSpeed");
             CrouchSpeed = serializedObject.FindProperty("CrouchSpeed");
             SprintSpeedMultiplier = serializedObject.FindProperty("SprintSpeedMultiplier");
             SwimSpeedMultiplier = serializedObject.FindProperty("SwimSpeedMultiplier");
+
             #endregion
+
             #region Rotation variables
+
             CompleteTurnWhileStanding = serializedObject.FindProperty("CompleteTurnWhileStanding");
             RotationTime = serializedObject.FindProperty("RotationTime");
+
             #endregion
+
             #region Jumping variables
+
             JumpHeight = serializedObject.FindProperty("JumpHeight");
             EnableMidairJumps = serializedObject.FindProperty("EnableMidairJumps");
             AllowedMidairJumps = serializedObject.FindProperty("AllowedMidairJumps");
             EnableMidairMovement = serializedObject.FindProperty("EnableMidairMovement");
             MidairSpeed = serializedObject.FindProperty("MidairSpeed");
+
             #endregion
+
             #region Moving grounds variables
+
             MoveWithMovingGround = serializedObject.FindProperty("MoveWithMovingGround");
             RotateWithRotatingGround = serializedObject.FindProperty("RotateWithRotatingGround");
             GroundAffectsJumping = serializedObject.FindProperty("GroundAffectsJumping");
+
             #endregion
+
             #region Misc variables
+
             IgnoredLayers = serializedObject.FindProperty("IgnoredLayers");
             EnableSliding = serializedObject.FindProperty("EnableSliding");
             SlidingTimeout = serializedObject.FindProperty("SlidingTimeout");
@@ -82,69 +59,87 @@ namespace JohnStairs.RCC.Character.ARPG {
             GroundedTolerance = serializedObject.FindProperty("GroundedTolerance");
             FallingThreshold = serializedObject.FindProperty("FallingThreshold");
             Gravity = serializedObject.FindProperty("Gravity");
+
             #endregion
         }
 
-        public override void OnInspectorGUI() {
+        public override void OnInspectorGUI()
+        {
             serializedObject.Update();
 
             #region Movement speed variables
-            showMovementSpeedSettings = EditorGUILayout.BeginFoldoutHeaderGroup(showMovementSpeedSettings, "Movement speed");
-            if (showMovementSpeedSettings) {
+
+            showMovementSpeedSettings =
+                EditorGUILayout.BeginFoldoutHeaderGroup(showMovementSpeedSettings, "Movement speed");
+            if (showMovementSpeedSettings)
+            {
                 EditorGUILayout.PropertyField(RunSpeed);
                 EditorGUILayout.PropertyField(WalkSpeed);
                 EditorGUILayout.PropertyField(CrouchSpeed);
                 EditorGUILayout.PropertyField(SprintSpeedMultiplier);
                 EditorGUILayout.PropertyField(SwimSpeedMultiplier);
             }
+
             EditorGUILayout.EndFoldoutHeaderGroup();
+
             #endregion
 
             #region Rotation variables
+
             showRotationSettings = EditorGUILayout.BeginFoldoutHeaderGroup(showRotationSettings, "Rotation");
-            if (showRotationSettings) {
+            if (showRotationSettings)
+            {
                 EditorGUILayout.PropertyField(CompleteTurnWhileStanding);
                 EditorGUILayout.PropertyField(RotationTime);
             }
+
             EditorGUILayout.EndFoldoutHeaderGroup();
+
             #endregion
 
             #region Jumping variables
+
             showJumpingSettings = EditorGUILayout.BeginFoldoutHeaderGroup(showJumpingSettings, "Jumping");
-            if (showJumpingSettings) {
+            if (showJumpingSettings)
+            {
                 EditorGUILayout.PropertyField(JumpHeight);
                 EditorGUILayout.PropertyField(EnableMidairJumps);
-                if (EnableMidairJumps.boolValue) {
-                    EditorGUILayout.PropertyField(AllowedMidairJumps);
-                }
+                if (EnableMidairJumps.boolValue) EditorGUILayout.PropertyField(AllowedMidairJumps);
                 EditorGUILayout.PropertyField(EnableMidairMovement);
-                if (EnableMidairMovement.enumValueIndex != (int)RPGMotor.MidairMovement.Never) {
+                if (EnableMidairMovement.enumValueIndex != (int)RPGMotor.MidairMovement.Never)
                     EditorGUILayout.PropertyField(MidairSpeed);
-                }
             }
+
             EditorGUILayout.EndFoldoutHeaderGroup();
+
             #endregion
 
             #region Moving grounds variables
-            showMovingGroundsSettings = EditorGUILayout.BeginFoldoutHeaderGroup(showMovingGroundsSettings, "Moving grounds");
-            if (showMovingGroundsSettings) {
+
+            showMovingGroundsSettings =
+                EditorGUILayout.BeginFoldoutHeaderGroup(showMovingGroundsSettings, "Moving grounds");
+            if (showMovingGroundsSettings)
+            {
                 EditorGUILayout.PropertyField(MoveWithMovingGround);
-                if (MoveWithMovingGround.boolValue) {
+                if (MoveWithMovingGround.boolValue)
+                {
                     EditorGUILayout.PropertyField(RotateWithRotatingGround);
                     EditorGUILayout.PropertyField(GroundAffectsJumping);
                 }
             }
+
             EditorGUILayout.EndFoldoutHeaderGroup();
+
             #endregion
 
             #region Misc variables
+
             showMiscSettings = EditorGUILayout.BeginFoldoutHeaderGroup(showMiscSettings, "Miscellaneous");
-            if (showMiscSettings) {
+            if (showMiscSettings)
+            {
                 EditorGUILayout.PropertyField(IgnoredLayers);
                 EditorGUILayout.PropertyField(EnableSliding);
-                if (EnableSliding.boolValue) {
-                    EditorGUILayout.PropertyField(SlidingTimeout);
-                }
+                if (EnableSliding.boolValue) EditorGUILayout.PropertyField(SlidingTimeout);
                 EditorGUILayout.PropertyField(EnableCollisionMovement);
                 EditorGUILayout.PropertyField(SwimmingStartHeight);
                 EditorGUILayout.PropertyField(FlyingTimeout);
@@ -152,10 +147,61 @@ namespace JohnStairs.RCC.Character.ARPG {
                 EditorGUILayout.PropertyField(FallingThreshold);
                 EditorGUILayout.PropertyField(Gravity);
             }
+
             EditorGUILayout.EndFoldoutHeaderGroup();
+
             #endregion
 
             serializedObject.ApplyModifiedProperties();
         }
+
+        #region Movement speed variables
+
+        private SerializedProperty RunSpeed;
+        private SerializedProperty WalkSpeed;
+        private SerializedProperty CrouchSpeed;
+        private SerializedProperty SprintSpeedMultiplier;
+        private SerializedProperty SwimSpeedMultiplier;
+
+        #endregion
+
+        #region Rotation variables
+
+        private SerializedProperty CompleteTurnWhileStanding;
+        private SerializedProperty RotationTime;
+
+        #endregion
+
+        #region Jumping variables
+
+        private SerializedProperty JumpHeight;
+        private SerializedProperty EnableMidairJumps;
+        private SerializedProperty AllowedMidairJumps;
+        private SerializedProperty EnableMidairMovement;
+        private SerializedProperty MidairSpeed;
+
+        #endregion
+
+        #region Moving grounds variables
+
+        private SerializedProperty MoveWithMovingGround;
+        private SerializedProperty RotateWithRotatingGround;
+        private SerializedProperty GroundAffectsJumping;
+
+        #endregion
+
+        #region Misc variables
+
+        private SerializedProperty IgnoredLayers;
+        private SerializedProperty EnableSliding;
+        private SerializedProperty SlidingTimeout;
+        private SerializedProperty EnableCollisionMovement;
+        private SerializedProperty SwimmingStartHeight;
+        private SerializedProperty FlyingTimeout;
+        private SerializedProperty GroundedTolerance;
+        private SerializedProperty FallingThreshold;
+        private SerializedProperty Gravity;
+
+        #endregion
     }
 }

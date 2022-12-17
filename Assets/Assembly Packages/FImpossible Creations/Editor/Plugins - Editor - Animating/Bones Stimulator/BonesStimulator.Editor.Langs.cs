@@ -3,20 +3,36 @@ using System.Xml;
 using UnityEditor;
 using UnityEngine;
 
-
 namespace FIMSpace.BonesStimulation
 {
     public partial class BonesStimulator_Editor
     {
-        private TextAsset langFile { get { if (_langFile == null) _langFile = Resources.Load("Bones Stimulator/BonesStimulator_Langs") as TextAsset; return _langFile; } }
-        private TextAsset _langFile;
+        public enum ELangs
+        {
+            English,
+            Polski,
+            русский,
+            中文,
+            日本語,
+            한국어
+        }
 
         /// <summary> Readed langs from file </summary>
         private static Hashtable langTexts;
 
-        public enum ELangs { English, Polski, русский, 中文, 日本語, 한국어 }
         private static ELangs choosedLang = 0;
-        private static ELangs? lastLoaded = null;
+        private static ELangs? lastLoaded;
+        private TextAsset _langFile;
+
+        private TextAsset langFile
+        {
+            get
+            {
+                if (_langFile == null)
+                    _langFile = Resources.Load("Bones Stimulator/BonesStimulator_Langs") as TextAsset;
+                return _langFile;
+            }
+        }
 
 
         // Setup langs ----------------------------------------
@@ -44,7 +60,6 @@ namespace FIMSpace.BonesStimulation
             var element = xml.DocumentElement[choosedLang.ToString()];
             if (element != null)
             {
-
                 var elemEnum = element.GetEnumerator();
                 while (elemEnum.MoveNext())
                 {
@@ -54,7 +69,7 @@ namespace FIMSpace.BonesStimulation
             }
             else
             {
-                Debug.LogError("The specified language does not exist: " + choosedLang.ToString());
+                Debug.LogError("The specified language does not exist: " + choosedLang);
             }
 
             #endregion
@@ -64,17 +79,12 @@ namespace FIMSpace.BonesStimulation
         private string Lang(string title)
         {
             if (langTexts == null)
-            {
                 //Debug.Log("No Lang: [" + title + "]");
                 return title;
-            }
 
-            if (!langTexts.ContainsKey(title))
-            {
-                return title;
-            }
+            if (!langTexts.ContainsKey(title)) return title;
 
-            string target = (string)langTexts[title];
+            var target = (string)langTexts[title];
 
             if (string.IsNullOrEmpty(target)) return title;
 
@@ -83,7 +93,8 @@ namespace FIMSpace.BonesStimulation
 
         private void LangProp(SerializedProperty prop, string lang)
         {
-            EditorGUILayout.PropertyField(prop, new GUIContent(Lang(lang), "(" + prop.displayName + ") " + prop.tooltip));
+            EditorGUILayout.PropertyField(prop,
+                new GUIContent(Lang(lang), "(" + prop.displayName + ") " + prop.tooltip));
         }
 
         private void LangProp(SerializedProperty prop)
@@ -96,6 +107,5 @@ namespace FIMSpace.BonesStimulation
             if (choosedLang == ELangs.中文 || choosedLang == ELangs.日本語) return true;
             return false;
         }
-
     }
 }

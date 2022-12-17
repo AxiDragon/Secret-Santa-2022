@@ -1,13 +1,19 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using Object = UnityEngine.Object;
 
 namespace ParadoxNotion.Serialization
 {
-    [System.Serializable]
+    [Serializable]
     ///<summary>A pair of JSON and UnityObject references</summary>
-    sealed public class SerializationPair
+    public sealed class SerializationPair
     {
         public string _json;
-        public List<UnityEngine.Object> _references;
-        public SerializationPair() { _references = new List<UnityEngine.Object>(); }
+        public List<Object> _references;
+
+        public SerializationPair()
+        {
+            _references = new List<Object>();
+        }
     }
 }

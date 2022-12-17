@@ -1,30 +1,26 @@
-﻿
-namespace FIMSpace
+﻿namespace FIMSpace
 {
     /// <summary>
-    /// FM: Class which contains many helpful methods which operates 
+    ///     FM: Class which contains many helpful methods which operates
     /// </summary>
     public static class FStringMethods
     {
         /// <summary>
-        /// Converting int to strig
+        ///     Converting int to strig
         /// </summary>
         /// <param name="value">value to show</param>
         /// <param name="signs">How many signs, value = 8, signs = 3 -> 008</param>
         public static string IntToString(this int value, int signs)
         {
-            string output = value.ToString();
+            var output = value.ToString();
 
-            int missingZeros = signs - output.Length;
+            var missingZeros = signs - output.Length;
 
             if (missingZeros > 0)
             {
-                string missing = "0";
+                var missing = "0";
 
-                for (int i = 1; i < missingZeros; i++)
-                {
-                    missing += 0;
-                }
+                for (var i = 1; i < missingZeros; i++) missing += 0;
 
                 output = missing + output;
             }
@@ -33,7 +29,7 @@ namespace FIMSpace
         }
 
         /// <summary>
-        /// Changing first letter to uppercase and rest to lowercase
+        ///     Changing first letter to uppercase and rest to lowercase
         /// </summary>
         public static string CapitalizeOnlyFirstLetter(this string text)
         {
@@ -43,7 +39,7 @@ namespace FIMSpace
         }
 
         /// <summary>
-        /// Chanigng first letter to uppercase and rest without changes
+        ///     Chanigng first letter to uppercase and rest without changes
         /// </summary>
         public static string CapitalizeFirstLetter(this string text)
         {
@@ -53,40 +49,38 @@ namespace FIMSpace
         }
 
         /// <summary>
-        /// Changing space signs to underline signs
+        ///     Changing space signs to underline signs
         /// </summary>
         public static string ReplaceSpacesWithUnderline(this string text)
         {
-            if (text.Contains(" "))
-            {
-                text = text.Replace(" ", "_");
-            }
+            if (text.Contains(" ")) text = text.Replace(" ", "_");
 
             return text;
         }
 
         /// <summary>
-        /// Returning string from end to the separator, for GetEndOfStringFromSeparator("ask/ddd/aaa", new char[] { '\\', '/' }) will return "aaa"
+        ///     Returning string from end to the separator, for GetEndOfStringFromSeparator("ask/ddd/aaa", new char[] { '\\', '/'
+        ///     }) will return "aaa"
         /// </summary>
         /// <param name="source"> Base string, from which you need only part of it </param>
         /// <param name="separators"> separators array to define, when stop checking new char[] { '\\', '/' } </param>
         /// <param name="which"> how many occurences of separator should happen </param>
         /// <param name="fromEnd"> start checking from end or from start of base string </param>
         /// <returns></returns>
-        public static string GetEndOfStringFromSeparator(this string source, char[] separators, int which = 1, bool fromEnd = false)
+        public static string GetEndOfStringFromSeparator(this string source, char[] separators, int which = 1,
+            bool fromEnd = false)
         {
-            bool separated = false;
-            int counter = 0;
-            int steps = 0;
+            var separated = false;
+            var counter = 0;
+            var steps = 0;
 
-            int i = 0;
+            var i = 0;
 
             for (i = source.Length - 1; i >= 0; i--)
             {
                 steps++;
 
-                for (int c = 0; c < separators.Length; c++)
-                {
+                for (var c = 0; c < separators.Length; c++)
                     if (source[i] == separators[c])
                     {
                         counter++;
@@ -99,7 +93,6 @@ namespace FIMSpace
                             break;
                         }
                     }
-                }
 
                 if (separated) break;
             }
@@ -107,35 +100,30 @@ namespace FIMSpace
             if (separated)
             {
                 if (!fromEnd)
-                {
-                    return source.Substring(0, source.Length - (steps));
-                }
-                else
-                {
-                    return source.Substring(i, source.Length - i);
-                }
+                    return source.Substring(0, source.Length - steps);
+                return source.Substring(i, source.Length - i);
             }
-            else
-            {
-                return "";
-            }
+
+            return "";
         }
 
         /// <summary>
-        /// Same as above GetEndOfStringFromSeparator() but here you define separators as strings, so for GetEndOfStringFromStringSeparator("ask/ddd/aaa", new string[] { "ask" }) will return "/ddd/aaa"
+        ///     Same as above GetEndOfStringFromSeparator() but here you define separators as strings, so for
+        ///     GetEndOfStringFromStringSeparator("ask/ddd/aaa", new string[] { "ask" }) will return "/ddd/aaa"
         /// </summary>
-        public static string GetEndOfStringFromStringSeparator(this string source, string[] separators, int which = 1, bool rest = false)
+        public static string GetEndOfStringFromStringSeparator(this string source, string[] separators, int which = 1,
+            bool rest = false)
         {
-            bool separated = false;
-            int counter = 0;
-            int steps = 0;
+            var separated = false;
+            var counter = 0;
+            var steps = 0;
 
-            int i = 0;
+            var i = 0;
             for (i = 0; i < source.Length; i++)
             {
                 steps++;
 
-                for (int c = 0; c < separators.Length; c++)
+                for (var c = 0; c < separators.Length; c++)
                 {
                     if (i + separators[c].Length > source.Length) break;
 
@@ -161,18 +149,11 @@ namespace FIMSpace
             if (separated)
             {
                 if (rest)
-                {
-                    return source.Substring(0, source.Length - (steps));
-                }
-                else
-                {
-                    return source.Substring(i, source.Length - i);
-                }
+                    return source.Substring(0, source.Length - steps);
+                return source.Substring(i, source.Length - i);
             }
-            else
-            {
-                return "";
-            }
+
+            return "";
         }
     }
 }

@@ -1,8 +1,10 @@
+using System;
 using System.Collections.Generic;
+using NodeCanvas.Framework.Internal;
+using ParadoxNotion.Serialization;
 
 namespace NodeCanvas.Framework
 {
-
     ///<summary>Basically Nodes and Connections</summary>
     public interface IGraphElement
     {
@@ -23,7 +25,7 @@ namespace NodeCanvas.Framework
     {
         string GetInvocationID();
         object Invoke(params object[] args);
-        void InvokeAsync(System.Action<object> callback, params object[] args);
+        void InvokeAsync(Action<object> callback, params object[] args);
     }
 
     ///<summary>Denotes that the node holds a nested graph.</summary>
@@ -33,7 +35,7 @@ namespace NodeCanvas.Framework
         Graph currentInstance { get; set; }
         Dictionary<Graph, Graph> instances { get; set; }
         BBParameter subGraphParameter { get; }
-        List<Internal.BBMappingParameter> variablesMap { get; set; }
+        List<BBMappingParameter> variablesMap { get; set; }
     }
 
     ///<summary>Denotes that the node holds a nested graph of type T</summary>
@@ -50,7 +52,9 @@ namespace NodeCanvas.Framework
     }
 
     ///<summary>Use the generic ITaskAssignable when the Task type is known</summary>
-    public interface ITaskAssignable<T> : ITaskAssignable where T : Task { }
+    public interface ITaskAssignable<T> : ITaskAssignable where T : Task
+    {
+    }
 
     ///<summary>Just a simple way to have a link draw to target reference if any for nodes that do have a node reference</summary>
     public interface IHaveNodeReference : IGraphElement
@@ -61,13 +65,20 @@ namespace NodeCanvas.Framework
     ///<summary>Interface to handle reflection based wrappers</summary>
     public interface IReflectedWrapper
     {
-        ParadoxNotion.Serialization.ISerializedReflectedInfo GetSerializedInfo();
+        ISerializedReflectedInfo GetSerializedInfo();
     }
 
     //----------------------------------------------------------------------------------------------
-    [System.Obsolete("This is no longer used nor required")]
-    public interface ISubTasksContainer { Task[] GetSubTasks(); }
-    [System.Obsolete("This is no longer used nor required")]
-    public interface ISubParametersContainer { BBParameter[] GetSubParameters(); }
+    [Obsolete("This is no longer used nor required")]
+    public interface ISubTasksContainer
+    {
+        Task[] GetSubTasks();
+    }
+
+    [Obsolete("This is no longer used nor required")]
+    public interface ISubParametersContainer
+    {
+        BBParameter[] GetSubParameters();
+    }
     //----------------------------------------------------------------------------------------------
 }

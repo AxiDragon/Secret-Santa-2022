@@ -7,7 +7,8 @@ namespace ParadoxNotion.Serialization.FullSerializer.Internal.DirectConverters
 {
     public class Rect_DirectConverter : fsDirectConverter<Rect>
     {
-        protected override fsResult DoSerialize(Rect model, Dictionary<string, fsData> serialized) {
+        protected override fsResult DoSerialize(Rect model, Dictionary<string, fsData> serialized)
+        {
             var result = fsResult.Success;
 
             result += SerializeMember(serialized, null, "xMin", model.xMin);
@@ -18,7 +19,8 @@ namespace ParadoxNotion.Serialization.FullSerializer.Internal.DirectConverters
             return result;
         }
 
-        protected override fsResult DoDeserialize(Dictionary<string, fsData> data, ref Rect model) {
+        protected override fsResult DoDeserialize(Dictionary<string, fsData> data, ref Rect model)
+        {
             var result = fsResult.Success;
 
             var t0 = model.xMin;
@@ -40,7 +42,8 @@ namespace ParadoxNotion.Serialization.FullSerializer.Internal.DirectConverters
             return result;
         }
 
-        public override object CreateInstance(fsData data, Type storageType) {
+        public override object CreateInstance(fsData data, Type storageType)
+        {
             return new Rect();
         }
     }

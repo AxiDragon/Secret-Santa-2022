@@ -8,5 +8,5 @@ namespace ScriptableObjectArchitecture
         order = SOArchitecture_Utility.ASSET_MENU_ORDER_COLLECTIONS + 17)]
     public class ULongCollection : Collection<ulong>
     {
-    } 
+    }
 }

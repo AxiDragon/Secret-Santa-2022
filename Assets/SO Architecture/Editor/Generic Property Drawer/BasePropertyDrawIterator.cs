@@ -1,25 +1,19 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-using UnityEditor;
+﻿using UnityEditor;
 
 namespace ScriptableObjectArchitecture.Editor
 {
     public abstract class BasePropertyDrawIterator : PropertyIterator, IPropertyDrawIterator
     {
+        protected readonly bool drawLabel;
+        protected readonly int startDepth;
+        protected readonly int startIndentLevel;
+
         public BasePropertyDrawIterator(SerializedProperty property, bool drawLabel) : base(property)
         {
             this.drawLabel = drawLabel;
-            this.startIndentLevel = EditorGUI.indentLevel;
-            this.startDepth = iterator.depth;
+            startIndentLevel = EditorGUI.indentLevel;
+            startDepth = iterator.depth;
         }
-
-        protected readonly bool drawLabel;
-        protected readonly int startIndentLevel;
-        protected readonly int startDepth;
-
-        protected abstract void DrawProperty();
-        protected abstract void DrawPropertyWithLabel();
 
         public virtual void Draw()
         {
@@ -28,39 +22,37 @@ namespace ScriptableObjectArchitecture.Editor
             if (IsCustom(iterator))
             {
                 if (drawLabel)
-                {
                     DrawPropertyWithLabel();
-                }
                 else
-                {
                     DrawProperty();
-                }
             }
             else
             {
-                if(drawLabel)
-                {
+                if (drawLabel)
                     DrawPropertyWithLabel();
-                }
                 else
-                {
                     DrawProperty();
-                }
             }
         }
+
         public override void End()
         {
             base.End();
 
             EditorGUI.indentLevel = startIndentLevel;
         }
+
+        protected abstract void DrawProperty();
+        protected abstract void DrawPropertyWithLabel();
+
         private int GetIndent(int depth)
         {
             return startIndentLevel + (depth - startDepth);
         }
+
         private bool IsCustom(SerializedProperty property)
         {
             return property.propertyType == SerializedPropertyType.Generic;
         }
-    } 
+    }
 }

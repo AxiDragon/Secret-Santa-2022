@@ -1,122 +1,147 @@
-﻿using UnityEngine;
+﻿using System;
 using System.Collections.Generic;
 using NodeCanvas.Framework;
 using ParadoxNotion.Serialization;
+using ParadoxNotion.Services;
+using UnityEditor;
+using UnityEngine;
+using Logger = ParadoxNotion.Services.Logger;
+using Object = UnityEngine.Object;
 
 namespace NodeCanvas
 {
-
     [AddComponentMenu("NodeCanvas/Standalone Action List (Bonus)")]
     public class ActionListPlayer : MonoBehaviour, ITaskSystem, ISerializationCallbackReceiver
     {
-
         public bool playOnAwake;
 
-        [SerializeField]
-        private string _serializedList;
-        [SerializeField]
-        private List<UnityEngine.Object> _objectReferences;
-        [SerializeField]
-        private Blackboard _blackboard;
+        [SerializeField] private string _serializedList;
 
-        [System.NonSerialized]
-        private ActionList _actionList;
+        [SerializeField] private List<Object> _objectReferences;
+
+        [SerializeField] private Blackboard _blackboard;
 
         private float timeStarted;
 
-        void ISerializationCallbackReceiver.OnBeforeSerialize() {
-            if ( ParadoxNotion.Services.Threader.applicationIsPlaying ) { return; }
-            _objectReferences = new List<UnityEngine.Object>();
-            _serializedList = JSONSerializer.Serialize(typeof(ActionList), _actionList, _objectReferences);
-        }
-
-        void ISerializationCallbackReceiver.OnAfterDeserialize() {
-            _actionList = JSONSerializer.Deserialize<ActionList>(_serializedList, _objectReferences);
-            if ( _actionList == null ) _actionList = (ActionList)Task.Create(typeof(ActionList), this);
-        }
-
         ///----------------------------------------------------------------------------------------------
 
-        public ActionList actionList => _actionList;
+        [field: NonSerialized]
+        public ActionList actionList { get; private set; }
+
+        protected void Awake()
+        {
+            UpdateTasksOwner();
+            if (playOnAwake) Play();
+        }
+
+        void ISerializationCallbackReceiver.OnBeforeSerialize()
+        {
+            if (Threader.applicationIsPlaying) return;
+            _objectReferences = new List<Object>();
+            _serializedList = JSONSerializer.Serialize(typeof(ActionList), actionList, _objectReferences);
+        }
+
+        void ISerializationCallbackReceiver.OnAfterDeserialize()
+        {
+            actionList = JSONSerializer.Deserialize<ActionList>(_serializedList, _objectReferences);
+            if (actionList == null) actionList = (ActionList)Task.Create(typeof(ActionList), this);
+        }
+
         public float elapsedTime => Time.time - timeStarted;
         public float deltaTime => Time.deltaTime;
         Object ITaskSystem.contextObject => this;
         Component ITaskSystem.agent => this;
 
-        public IBlackboard blackboard {
-            get { return _blackboard; }
+        public IBlackboard blackboard
+        {
+            get => _blackboard;
             set
             {
-                if ( !ReferenceEquals(_blackboard, value) ) {
-                    _blackboard = (Blackboard)(object)value;
+                if (!ReferenceEquals(_blackboard, value))
+                {
+                    _blackboard = (Blackboard)value;
                     UpdateTasksOwner();
                 }
             }
         }
 
-        ///----------------------------------------------------------------------------------------------
-
-        public static ActionListPlayer Create() {
-            return new GameObject("ActionList").AddComponent<ActionListPlayer>();
-        }
-
-        protected void Awake() {
-            UpdateTasksOwner();
-            if ( playOnAwake ) {
-                Play();
-            }
-        }
-
-        public void UpdateTasksOwner() {
+        public void UpdateTasksOwner()
+        {
             actionList.SetOwnerSystem(this);
-            foreach ( var a in actionList.actions ) {
+            foreach (var a in actionList.actions)
+            {
                 a.SetOwnerSystem(this);
                 BBParameter.SetBBFields(a, blackboard);
             }
         }
 
-        void ITaskSystem.SendEvent(string name, object value, object sender) {
-            ParadoxNotion.Services.Logger.LogWarning("Sending events to action lists has no effect");
+        void ITaskSystem.SendEvent(string name, object value, object sender)
+        {
+            Logger.LogWarning("Sending events to action lists has no effect");
         }
-        void ITaskSystem.SendEvent<T>(string name, T value, object sender) {
-            ParadoxNotion.Services.Logger.LogWarning("Sending events to action lists has no effect");
+
+        void ITaskSystem.SendEvent<T>(string name, T value, object sender)
+        {
+            Logger.LogWarning("Sending events to action lists has no effect");
+        }
+
+        ///----------------------------------------------------------------------------------------------
+        public static ActionListPlayer Create()
+        {
+            return new GameObject("ActionList").AddComponent<ActionListPlayer>();
         }
 
         [ContextMenu("Play")]
-        public void Play() { Play(this, this.blackboard, null); }
-        public void Play(System.Action<Status> OnFinish) { Play(this, this.blackboard, OnFinish); }
-        public void Play(Component agent, IBlackboard blackboard, System.Action<Status> OnFinish) {
-            if ( Application.isPlaying ) {
+        public void Play()
+        {
+            Play(this, blackboard, null);
+        }
+
+        public void Play(Action<Status> OnFinish)
+        {
+            Play(this, blackboard, OnFinish);
+        }
+
+        public void Play(Component agent, IBlackboard blackboard, Action<Status> OnFinish)
+        {
+            if (Application.isPlaying)
+            {
                 timeStarted = Time.time;
                 actionList.ExecuteIndependent(agent, blackboard, OnFinish);
             }
         }
 
-        public Status Execute() { return actionList.Execute(this, blackboard); }
-        public Status Execute(Component agent) { return actionList.Execute(agent, blackboard); }
-
-
-        ///----------------------------------------------------------------------------------------------
-        ///---------------------------------------UNITY EDITOR-------------------------------------------
-#if UNITY_EDITOR
-
-        [UnityEditor.MenuItem("Tools/ParadoxNotion/NodeCanvas/Create/Standalone Action List", false, 3)]
-        static void CreateActionListPlayer() {
-            UnityEditor.Selection.activeObject = Create();
+        public Status Execute()
+        {
+            return actionList.Execute(this, blackboard);
         }
 
-        void Reset() {
+        public Status Execute(Component agent)
+        {
+            return actionList.Execute(agent, blackboard);
+        }
+
+
+        /// ----------------------------------------------------------------------------------------------
+        /// ---------------------------------------UNITY EDITOR-------------------------------------------
+#if UNITY_EDITOR
+        [MenuItem("Tools/ParadoxNotion/NodeCanvas/Create/Standalone Action List", false, 3)]
+        private static void CreateActionListPlayer()
+        {
+            Selection.activeObject = Create();
+        }
+
+        private void Reset()
+        {
             var bb = GetComponent<Blackboard>();
             _blackboard = bb != null ? bb : gameObject.AddComponent<Blackboard>();
-            _actionList = (ActionList)Task.Create(typeof(ActionList), this);
+            actionList = (ActionList)Task.Create(typeof(ActionList), this);
         }
 
-        void OnValidate() {
-            if ( !Application.isPlaying && !UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode ) {
-                UpdateTasksOwner();
-            }
+        private void OnValidate()
+        {
+            if (!Application.isPlaying && !EditorApplication.isPlayingOrWillChangePlaymode) UpdateTasksOwner();
         }
 #endif
-
     }
 }

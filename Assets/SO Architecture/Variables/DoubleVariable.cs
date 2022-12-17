@@ -1,10 +1,13 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using UnityEngine.Events;
 
 namespace ScriptableObjectArchitecture
 {
-    [System.Serializable]
-    public class DoubleEvent : UnityEvent<double> { }
+    [Serializable]
+    public class DoubleEvent : UnityEvent<double>
+    {
+    }
 
     [CreateAssetMenu(
         fileName = "DoubleVariable.asset",
@@ -12,21 +15,15 @@ namespace ScriptableObjectArchitecture
         order = SOArchitecture_Utility.ASSET_MENU_ORDER_COLLECTIONS + 8)]
     public class DoubleVariable : BaseVariable<double, DoubleEvent>
     {
-        public override bool Clampable { get { return true; } }
+        public override bool Clampable => true;
+
         protected override double ClampValue(double value)
         {
             if (value.CompareTo(MinClampValue) < 0)
-            {
                 return MinClampValue;
-            }
-            else if (value.CompareTo(MaxClampValue) > 0)
-            {
+            if (value.CompareTo(MaxClampValue) > 0)
                 return MaxClampValue;
-            }
-            else
-            {
-                return value;
-            }
+            return value;
         }
-    } 
+    }
 }

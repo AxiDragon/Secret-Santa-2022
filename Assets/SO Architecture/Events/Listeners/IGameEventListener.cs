@@ -4,8 +4,9 @@
     {
         void OnEventRaised(T value);
     }
+
     public interface IGameEventListener
     {
         void OnEventRaised();
-    } 
+    }
 }

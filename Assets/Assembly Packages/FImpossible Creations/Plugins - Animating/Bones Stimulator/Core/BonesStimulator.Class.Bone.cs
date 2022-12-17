@@ -1,18 +1,15 @@
-﻿using FIMSpace.FTools;
+﻿using System;
 using UnityEngine;
 
 namespace FIMSpace.BonesStimulation
 {
     public partial class BonesStimulator
     {
-        [System.Serializable]
+        [Serializable]
         public partial class Bone
         {
             public Transform transform;
-
-            public Bone Child { get; private set; }
-            public Bone Parent { get; private set; }
-            public float Evaluation = 0f;
+            public float Evaluation;
 
             public Vector3 initLocalPos;
             public Quaternion initLocalRot;
@@ -23,15 +20,8 @@ namespace FIMSpace.BonesStimulation
             public Quaternion srcAnimatorLocRotation;
             public Quaternion srcAnimatorRotation;
 
-
-            #region Physical
-
-            public bool EnableCollisions = true;
-            public float CollisionRadius = 0.1f;
-            public Vector3 CollisionHelperVector;
-            public float GetCollisionRadiusScaled() { return CollisionRadius * transform.lossyScale.x; }
-
-            #endregion
+            public Bone Child { get; private set; }
+            public Bone Parent { get; private set; }
 
 
             public void SetChild(Bone child)
@@ -61,8 +51,8 @@ namespace FIMSpace.BonesStimulation
 
                 transform.localPosition = initLocalPos;
                 transform.localRotation = initLocalRot;
-            }            
-            
+            }
+
             public void PreCalibrateWithScale()
             {
                 if (transform == null) return;
@@ -71,6 +61,20 @@ namespace FIMSpace.BonesStimulation
                 transform.localRotation = initLocalRot;
                 transform.localScale = initLocalScale;
             }
+
+
+            #region Physical
+
+            public bool EnableCollisions = true;
+            public float CollisionRadius = 0.1f;
+            public Vector3 CollisionHelperVector;
+
+            public float GetCollisionRadiusScaled()
+            {
+                return CollisionRadius * transform.lossyScale.x;
+            }
+
+            #endregion
         }
     }
 }

@@ -6,12 +6,11 @@ using ParadoxNotion.Design;
 [Category("✫ Blackboard")]
 public class SetEnumFlag : ActionTask
 {
-    [BlackboardOnly]
-    [RequiredField]
-    public readonly BBObjectParameter Variable = new BBObjectParameter(typeof(Enum));
+    public readonly BBParameter<bool> Clear = new();
 
-    public readonly BBObjectParameter Flag = new BBObjectParameter(typeof(Enum));
-    public readonly BBParameter<bool> Clear = new BBParameter<bool>();
+    public readonly BBObjectParameter Flag = new(typeof(Enum));
+
+    [BlackboardOnly] [RequiredField] public readonly BBObjectParameter Variable = new(typeof(Enum));
 
     protected override string info => $"{(Clear.value ? "Clear" : "Set")} {Variable} for {Flag} flag";
 

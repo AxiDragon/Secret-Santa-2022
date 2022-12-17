@@ -9,10 +9,10 @@ namespace NodeCanvas.Editor
     [CustomEditor(typeof(AssetBlackboard))]
     public class AssetBlackboardInspector : UnityEditor.Editor
     {
+        private AssetBlackboard bb => (AssetBlackboard)target;
 
-        private AssetBlackboard bb { get { return (AssetBlackboard)target; } }
-
-        public override void OnInspectorGUI() {
+        public override void OnInspectorGUI()
+        {
             BlackboardEditor.ShowVariables(bb);
             EditorUtils.EndOfInspector();
             Repaint();

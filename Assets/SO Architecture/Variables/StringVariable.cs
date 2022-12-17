@@ -1,10 +1,13 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using UnityEngine.Events;
 
 namespace ScriptableObjectArchitecture
 {
-    [System.Serializable]
-    public class StringEvent : UnityEvent<string> { }
+    [Serializable]
+    public class StringEvent : UnityEvent<string>
+    {
+    }
 
     [CreateAssetMenu(
         fileName = "StringVariable.asset",
@@ -12,5 +15,5 @@ namespace ScriptableObjectArchitecture
         order = SOArchitecture_Utility.ASSET_MENU_ORDER_COLLECTIONS + 2)]
     public sealed class StringVariable : BaseVariable<string, StringEvent>
     {
-    } 
+    }
 }

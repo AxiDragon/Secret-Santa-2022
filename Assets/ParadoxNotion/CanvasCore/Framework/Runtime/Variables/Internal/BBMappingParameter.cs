@@ -1,23 +1,40 @@
 ﻿using System;
+using UnityEngine;
 
 namespace NodeCanvas.Framework.Internal
 {
-    ///<summary>Used to map subgraph variables <-> parent variables (or direct value)</summary>
+    /// <summary>
+    ///     Used to map subgraph variables <-> parent variables (or direct value)
+    /// </summary>
     [Serializable]
     public class BBMappingParameter : BBObjectParameter
     {
-        [UnityEngine.SerializeField] private string _targetSubGraphVariableID;
-        [UnityEngine.SerializeField] private bool _canRead;
-        [UnityEngine.SerializeField] private bool _canWrite;
+        [SerializeField] private string _targetSubGraphVariableID;
+        [SerializeField] private bool _canRead;
+        [SerializeField] private bool _canWrite;
+
+        public BBMappingParameter()
+        {
+        }
+
+        public BBMappingParameter(Variable subVariable)
+        {
+            _targetSubGraphVariableID = subVariable.ID;
+            SetType(subVariable.varType);
+        }
 
         public string targetSubGraphVariableID => _targetSubGraphVariableID;
-        public bool canRead { get { return _canRead; } set { _canRead = value; } }
-        public bool canWrite { get { return _canWrite; } set { _canWrite = value; } }
 
-        public BBMappingParameter() : base() { }
-        public BBMappingParameter(Variable subVariable) {
-            _targetSubGraphVariableID = subVariable.ID;
-            base.SetType(subVariable.varType);
+        public bool canRead
+        {
+            get => _canRead;
+            set => _canRead = value;
+        }
+
+        public bool canWrite
+        {
+            get => _canWrite;
+            set => _canWrite = value;
         }
     }
 }

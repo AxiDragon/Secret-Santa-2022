@@ -1,52 +1,53 @@
-using System.Linq;
 using NodeCanvas.Framework;
 using NodeCanvas.StateMachines;
 using ParadoxNotion.Design;
 using UnityEngine;
 
-
 namespace NodeCanvas.BehaviourTrees
 {
-
     [Name("Sub FSM")]
-    [Description("Executes a sub FSM. Returns Running while the sub FSM is active. If a Success or Failure State is selected, then it will return Success or Failure as soon as the Nested FSM enters that state at which point the sub FSM will also be stoped. If the sub FSM ends otherwise, this node will return Success.")]
+    [Description(
+        "Executes a sub FSM. Returns Running while the sub FSM is active. If a Success or Failure State is selected, then it will return Success or Failure as soon as the Nested FSM enters that state at which point the sub FSM will also be stoped. If the sub FSM ends otherwise, this node will return Success.")]
     [ParadoxNotion.Design.Icon("FSM")]
     [DropReferenceType(typeof(FSM))]
     public class NestedFSM : BTNodeNested<FSM>
     {
+        [SerializeField] [ExposeField] [Name("Sub FSM")]
+        private readonly BBParameter<FSM> _nestedFSM = null;
 
-        [SerializeField, ExposeField, Name("Sub FSM")]
-        private BBParameter<FSM> _nestedFSM = null;
-
-        [HideInInspector] public string successState;
         [HideInInspector] public string failureState;
 
-        public override FSM subGraph { get { return _nestedFSM.value; } set { _nestedFSM.value = value; } }
+        [HideInInspector] public string successState;
+
+        public override FSM subGraph
+        {
+            get => _nestedFSM.value;
+            set => _nestedFSM.value = value;
+        }
+
         public override BBParameter subGraphParameter => _nestedFSM;
 
         ///----------------------------------------------------------------------------------------------
+        protected override Status OnExecute(Component agent, IBlackboard blackboard)
+        {
+            if (subGraph == null || subGraph.primeNode == null) return Status.Optional;
 
-        protected override Status OnExecute(Component agent, IBlackboard blackboard) {
-
-            if ( subGraph == null || subGraph.primeNode == null ) {
-                return Status.Optional;
-            }
-
-            if ( status == Status.Resting ) {
+            if (status == Status.Resting)
+            {
                 status = Status.Running;
                 this.TryStartSubGraph(agent, OnFSMFinish);
             }
 
-            if ( status == Status.Running ) {
-                currentInstance.UpdateGraph(this.graph.deltaTime);
-            }
+            if (status == Status.Running) currentInstance.UpdateGraph(graph.deltaTime);
 
-            if ( !string.IsNullOrEmpty(successState) && currentInstance.currentStateName == successState ) {
-                currentInstance.Stop(true);
+            if (!string.IsNullOrEmpty(successState) && currentInstance.currentStateName == successState)
+            {
+                currentInstance.Stop();
                 return Status.Success;
             }
 
-            if ( !string.IsNullOrEmpty(failureState) && currentInstance.currentStateName == failureState ) {
+            if (!string.IsNullOrEmpty(failureState) && currentInstance.currentStateName == failureState)
+            {
                 currentInstance.Stop(false);
                 return Status.Failure;
             }
@@ -54,30 +55,29 @@ namespace NodeCanvas.BehaviourTrees
             return status;
         }
 
-        void OnFSMFinish(bool success) {
-            if ( status == Status.Running ) {
-                status = success ? Status.Success : Status.Failure;
-            }
+        private void OnFSMFinish(bool success)
+        {
+            if (status == Status.Running) status = success ? Status.Success : Status.Failure;
         }
 
-        protected override void OnReset() {
-            if ( currentInstance != null ) {
-                currentInstance.Stop();
-            }
+        protected override void OnReset()
+        {
+            if (currentInstance != null) currentInstance.Stop();
         }
 
-        ///----------------------------------------------------------------------------------------------
-        ///---------------------------------------UNITY EDITOR-------------------------------------------
+        /// ----------------------------------------------------------------------------------------------
+        /// ---------------------------------------UNITY EDITOR-------------------------------------------
 #if UNITY_EDITOR
-        protected override void OnNodeInspectorGUI() {
+        protected override void OnNodeInspectorGUI()
+        {
             base.OnNodeInspectorGUI();
-            if ( subGraph != null ) {
-                successState = EditorUtils.Popup<string>("Success State", successState, subGraph.GetStateNames());
-                failureState = EditorUtils.Popup<string>("Failure State", failureState, subGraph.GetStateNames());
+            if (subGraph != null)
+            {
+                successState = EditorUtils.Popup("Success State", successState, subGraph.GetStateNames());
+                failureState = EditorUtils.Popup("Failure State", failureState, subGraph.GetStateNames());
             }
         }
 #endif
         ///----------------------------------------------------------------------------------------------
-
     }
 }

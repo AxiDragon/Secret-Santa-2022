@@ -4,8 +4,7 @@ namespace ScriptableObjectArchitecture.Examples
 {
     public class DamageDealerWithEvent : DamageDealer
     {
-        [SerializeField]
-        private GameEvent _onDamagedEvent = default(GameEvent);
+        [SerializeField] private GameEvent _onDamagedEvent = default;
 
         protected override void DealDamage(UnitHealth target)
         {

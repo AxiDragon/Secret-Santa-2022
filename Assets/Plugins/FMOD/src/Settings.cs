@@ -1,25 +1,25 @@
-﻿using UnityEngine;
+﻿using System;
 using System.Collections.Generic;
-using System;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
-using UnityEngine.Serialization;
 using System.Runtime.CompilerServices;
+using System.Text.RegularExpressions;
+using FMOD;
+using UnityEngine;
+using UnityEngine.Serialization;
 #if UNITY_EDITOR
 using UnityEditor;
-using UnityEditor.Build;
-using UnityEditor.Build.Reporting;
 #endif
 
 [assembly: InternalsVisibleTo("FMODUnityEditor")]
+
 namespace FMODUnity
 {
     [Serializable]
     public enum ImportType
     {
         StreamingAssets,
-        AssetBundle,
+        AssetBundle
     }
 
     [Serializable]
@@ -41,14 +41,14 @@ namespace FMODUnity
     public enum EventLinkage
     {
         Path,
-        GUID,
+        GUID
     }
 
     public enum TriStateBool
     {
         Disabled,
         Enabled,
-        Development,
+        Development
     }
 
     public interface IEditorSettings
@@ -81,175 +81,126 @@ namespace FMODUnity
     public class Settings : ScriptableObject
     {
 #if UNITY_EDITOR
-        [FormerlySerializedAs("SwitchSettingsMigration")]
-        [SerializeField]
-        private bool switchSettingsMigration = false;
+        [FormerlySerializedAs("SwitchSettingsMigration")] [SerializeField]
+        private bool switchSettingsMigration;
 #endif
 
         internal const string SettingsAssetName = "FMODStudioSettings";
 
-        private static Settings instance = null;
-        private static IEditorSettings editorSettings = null;
-        private static bool isInitializing = false;
+        private static Settings instance;
+        private static bool isInitializing;
 
-        [SerializeField]
-        public bool HasSourceProject = true;
+        [SerializeField] public bool HasSourceProject = true;
 
-        [SerializeField]
-        public bool HasPlatforms = true;
+        [SerializeField] public bool HasPlatforms = true;
 
-        [SerializeField]
-        private string sourceProjectPath;
+        [SerializeField] private string sourceProjectPath;
 
-        [SerializeField]
-        private string sourceBankPath;
+        [SerializeField] private string sourceBankPath;
 
-        [FormerlySerializedAs("SourceBankPathUnformatted")]
-        [SerializeField]
+        [FormerlySerializedAs("SourceBankPathUnformatted")] [SerializeField]
         private string sourceBankPathUnformatted; // Kept as to not break existing projects
 
-        [SerializeField]
-        public int BankRefreshCooldown = 5;
+        [SerializeField] public int BankRefreshCooldown = 5;
 
-        [SerializeField]
-        public bool ShowBankRefreshWindow = true;
+        [SerializeField] public bool ShowBankRefreshWindow = true;
 
         internal const int BankRefreshPrompt = -1;
         internal const int BankRefreshManual = -2;
 
-        [SerializeField]
-        public bool AutomaticEventLoading;
+        [SerializeField] public bool AutomaticEventLoading;
 
-        [SerializeField]
-        public BankLoadType BankLoadType;
+        [SerializeField] public BankLoadType BankLoadType;
 
-        [SerializeField]
-        public bool AutomaticSampleLoading;
+        [SerializeField] public bool AutomaticSampleLoading;
 
-        [SerializeField]
-        public string EncryptionKey;
+        [SerializeField] public string EncryptionKey;
 
-        [SerializeField]
-        public ImportType ImportType;
+        [SerializeField] public ImportType ImportType;
 
-        [SerializeField]
-        public string TargetAssetPath = "FMODBanks";
+        [SerializeField] public string TargetAssetPath = "FMODBanks";
 
-        [SerializeField]
-        public string TargetBankFolder = "";
+        [SerializeField] public string TargetBankFolder = "";
 
-        [SerializeField]
-        public EventLinkage EventLinkage = EventLinkage.Path;
+        [SerializeField] public EventLinkage EventLinkage = EventLinkage.Path;
 
-        [SerializeField]
-        public FMOD.DEBUG_FLAGS LoggingLevel = FMOD.DEBUG_FLAGS.WARNING;
+        [SerializeField] public DEBUG_FLAGS LoggingLevel = DEBUG_FLAGS.WARNING;
 
-        [SerializeField]
-        internal List<Legacy.PlatformIntSetting> SpeakerModeSettings;
+        [SerializeField] internal List<Legacy.PlatformIntSetting> SpeakerModeSettings;
 
-        [SerializeField]
-        internal List<Legacy.PlatformIntSetting> SampleRateSettings;
+        [SerializeField] internal List<Legacy.PlatformIntSetting> SampleRateSettings;
 
-        [SerializeField]
-        internal List<Legacy.PlatformBoolSetting> LiveUpdateSettings;
+        [SerializeField] internal List<Legacy.PlatformBoolSetting> LiveUpdateSettings;
 
-        [SerializeField]
-        internal List<Legacy.PlatformBoolSetting> OverlaySettings;
+        [SerializeField] internal List<Legacy.PlatformBoolSetting> OverlaySettings;
 
-        [SerializeField]
-        internal List<Legacy.PlatformStringSetting> BankDirectorySettings;
+        [SerializeField] internal List<Legacy.PlatformStringSetting> BankDirectorySettings;
 
-        [SerializeField]
-        internal List<Legacy.PlatformIntSetting> VirtualChannelSettings;
+        [SerializeField] internal List<Legacy.PlatformIntSetting> VirtualChannelSettings;
 
-        [SerializeField]
-        internal List<Legacy.PlatformIntSetting> RealChannelSettings;
+        [SerializeField] internal List<Legacy.PlatformIntSetting> RealChannelSettings;
 
-        [SerializeField]
-        internal List<string> Plugins = new List<string>();
+        [SerializeField] internal List<string> Plugins = new();
 
-        [SerializeField]
-        public List<string> MasterBanks;
+        [SerializeField] public List<string> MasterBanks;
 
-        [SerializeField]
-        public List<string> Banks;
+        [SerializeField] public List<string> Banks;
 
-        [SerializeField]
-        public List<string> BanksToLoad;
+        [SerializeField] public List<string> BanksToLoad;
 
-        [SerializeField]
-        public ushort LiveUpdatePort = 9264;
+        [SerializeField] public ushort LiveUpdatePort = 9264;
 
-        [SerializeField]
-        public bool EnableMemoryTracking;
+        [SerializeField] public bool EnableMemoryTracking;
 
-        [SerializeField]
-        public bool AndroidUseOBB = false;
+        [SerializeField] public bool AndroidUseOBB;
 
-        [SerializeField]
-        public MeterChannelOrderingType MeterChannelOrdering;
+        [SerializeField] public MeterChannelOrderingType MeterChannelOrdering;
 
-        [SerializeField]
-        public bool StopEventsOutsideMaxDistance = false;
+        [SerializeField] public bool StopEventsOutsideMaxDistance;
 
-        [SerializeField]
-        internal bool BoltUnitOptionsBuildPending = false;
+        [SerializeField] internal bool BoltUnitOptionsBuildPending;
 
-        [SerializeField]
-        public bool EnableErrorCallback = false;
+        [SerializeField] public bool EnableErrorCallback;
 
-        [SerializeField]
-        internal SharedLibraryUpdateStages SharedLibraryUpdateStage = SharedLibraryUpdateStages.Start;
+        [SerializeField] internal SharedLibraryUpdateStages SharedLibraryUpdateStage = SharedLibraryUpdateStages.Start;
 
-        [SerializeField]
-        internal double SharedLibraryTimeSinceStart = 0.0;
+        [SerializeField] internal double SharedLibraryTimeSinceStart;
 
-        [SerializeField]
-        internal int CurrentVersion;
+        [SerializeField] internal int CurrentVersion;
 
-        [SerializeField]
-        public bool HideSetupWizard;
+        [SerializeField] public bool HideSetupWizard;
 
-        [SerializeField]
-        internal int LastEventReferenceScanVersion;
+        [SerializeField] internal int LastEventReferenceScanVersion;
 
         // This holds all known platforms, but only those that have settings are shown in the UI.
         // It is populated at load time from the Platform objects in the settings asset.
         // It is serializable to facilitate undo support.
-        [SerializeField]
-        public List<Platform> Platforms = new List<Platform>();
+        [SerializeField] public List<Platform> Platforms = new();
 
         // This is used to find the platform that matches the current Unity runtime platform.
-        internal Dictionary<RuntimePlatform, List<Platform>> PlatformForRuntimePlatform = new Dictionary<RuntimePlatform, List<Platform>>();
+        internal Dictionary<RuntimePlatform, List<Platform>> PlatformForRuntimePlatform = new();
 
         // Default platform settings.
-        [NonSerialized]
-        public Platform DefaultPlatform;
+        [NonSerialized] public Platform DefaultPlatform;
 
         // Play In Editor platform settings.
-        [NonSerialized]
-        public Platform PlayInEditorPlatform;
+        [NonSerialized] public Platform PlayInEditorPlatform;
 
 #if UNITY_EDITOR
         // We store a persistent list so we don't try to re-migrate platforms if the user deletes them.
-        [SerializeField]
-        internal List<Legacy.Platform> MigratedPlatforms = new List<Legacy.Platform>();
+        [SerializeField] internal List<Legacy.Platform> MigratedPlatforms = new();
 #endif
 
         // A collection of templates for constructing known platforms.
-        internal static List<PlatformTemplate> PlatformTemplates = new List<PlatformTemplate>();
+        internal static List<PlatformTemplate> PlatformTemplates = new();
 
-        [NonSerialized]
-        private bool hasLoaded = false;
+        [NonSerialized] private bool hasLoaded;
 
         public static Settings Instance
         {
             get
             {
-                if (isInitializing)
-                {
-                    return null;
-                }
+                if (isInitializing) return null;
 
                 Initialize();
 
@@ -270,20 +221,17 @@ namespace FMODUnity
                     RuntimeUtils.DebugLog("[FMOD] Cannot find integration settings, creating default settings");
                     instance = CreateInstance<Settings>();
                     instance.name = "FMOD Studio Integration Settings";
-                    instance.CurrentVersion = FMOD.VERSION.number;
-                    instance.LastEventReferenceScanVersion = FMOD.VERSION.number;
+                    instance.CurrentVersion = VERSION.number;
+                    instance.LastEventReferenceScanVersion = VERSION.number;
 
 #if UNITY_EDITOR
-                    if (editorSettings != null)
-                    {
-                        editorSettings.CreateSettingsAsset(SettingsAssetName);
-                    }
+                    if (EditorSettings != null)
+                        EditorSettings.CreateSettingsAsset(SettingsAssetName);
                     else
-                    {
                         // editorSettings is populated via the static constructor of FMODUnity.EditorSettings when in the Unity editor.
-                        RuntimeUtils.DebugLogError("[FMOD] Attempted to instantiate Settings before EditorSettings was populated. " +
+                        RuntimeUtils.DebugLogError(
+                            "[FMOD] Attempted to instantiate Settings before EditorSettings was populated. " +
                             "Ensure that Settings.Instance is not being called from an InitializeOnLoad method or class.");
-                    }
 #endif
                 }
 
@@ -291,40 +239,18 @@ namespace FMODUnity
             }
         }
 
-        internal static IEditorSettings EditorSettings
-        {
-            get
-            {
-                return editorSettings;
-            }
-            set
-            {
-                editorSettings = value;
-            }
-        }
+        internal static IEditorSettings EditorSettings { get; set; } = null;
 
         public string SourceProjectPath
         {
-            get
-            {
-                return sourceProjectPath;
-            }
-            set
-            {
-                sourceProjectPath = value;
-            }
+            get => sourceProjectPath;
+            set => sourceProjectPath = value;
         }
 
         public string SourceBankPath
         {
-            get
-            {
-                return sourceBankPath;
-            }
-            set
-            {
-                sourceBankPath = value;
-            }
+            get => sourceBankPath;
+            set => sourceBankPath = value;
         }
 
         internal string TargetPath
@@ -334,25 +260,13 @@ namespace FMODUnity
                 if (ImportType == ImportType.AssetBundle)
                 {
                     if (string.IsNullOrEmpty(TargetAssetPath))
-                    {
                         return Application.dataPath;
-                    }
-                    else
-                    {
-                        return Application.dataPath + "/" + TargetAssetPath;
-                    }
+                    return Application.dataPath + "/" + TargetAssetPath;
                 }
-                else
-                { 
-                    if (string.IsNullOrEmpty(TargetBankFolder))
-                    {
-                        return Application.streamingAssetsPath;
-                    }
-                    else
-                    {
-                        return Application.streamingAssetsPath + "/" + TargetBankFolder;
-                    }
-                }
+
+                if (string.IsNullOrEmpty(TargetBankFolder))
+                    return Application.streamingAssetsPath;
+                return Application.streamingAssetsPath + "/" + TargetBankFolder;
             }
         }
 
@@ -361,24 +275,15 @@ namespace FMODUnity
             get
             {
                 if (ImportType == ImportType.AssetBundle)
-                {
                     return TargetAssetPath;
-                }
-                else
-                {
-                    return TargetBankFolder;
-                }
+                return TargetBankFolder;
             }
             set
             {
                 if (ImportType == ImportType.AssetBundle)
-                {
                     TargetAssetPath = value;
-                }
                 else
-                { 
                     TargetBankFolder = value;
-                }
             }
         }
 
@@ -387,18 +292,14 @@ namespace FMODUnity
             Start = 0,
             DisableExistingLibraries,
             RestartUnity,
-            CopyNewLibraries,
-        };
+            CopyNewLibraries
+        }
 
         internal Platform FindPlatform(string identifier)
         {
-            foreach (Platform platform in Platforms)
-            {
+            foreach (var platform in Platforms)
                 if (platform.Identifier == identifier)
-                {
                     return platform;
-                }
-            }
 
             return null;
         }
@@ -411,9 +312,7 @@ namespace FMODUnity
         internal void AddPlatform(Platform platform)
         {
             if (PlatformExists(platform.Identifier))
-            {
                 throw new ArgumentException(string.Format("Duplicate platform identifier: {0}", platform.Identifier));
-            }
 
             Platforms.Add(platform);
         }
@@ -431,10 +330,7 @@ namespace FMODUnity
             platform.DeclareRuntimePlatforms(this);
 
 #if UNITY_EDITOR
-            if (editorSettings != null)
-            {
-                editorSettings.AddPlatformForBuildTargets(platform);
-            }
+            if (EditorSettings != null) EditorSettings.AddPlatformForBuildTargets(platform);
 #endif
         }
 
@@ -458,9 +354,7 @@ namespace FMODUnity
         private void LinkPlatformToParent(Platform platform)
         {
             if (!string.IsNullOrEmpty(platform.ParentIdentifier))
-            {
                 SetPlatformParent(platform, FindPlatform(platform.ParentIdentifier));
-            }
         }
 
         // The highest-priority platform that matches the current environment.
@@ -469,15 +363,9 @@ namespace FMODUnity
             List<Platform> platforms;
 
             if (PlatformForRuntimePlatform.TryGetValue(Application.platform, out platforms))
-            {
-                foreach (Platform platform in platforms)
-                {
+                foreach (var platform in platforms)
                     if (platform.MatchesCurrentEnvironment)
-                    {
                         return platform;
-                    }
-                }
-            }
 
             return DefaultPlatform;
         }
@@ -511,10 +399,7 @@ namespace FMODUnity
 #if UNITY_EDITOR
         internal void SetPlatformParent(Platform platform, Platform newParent)
         {
-            if (editorSettings != null)
-            {
-                editorSettings.SetPlatformParent(platform, newParent);
-            }
+            if (EditorSettings != null) EditorSettings.SetPlatformParent(platform, newParent);
         }
 #else
         public void SetPlatformParent(Platform platform, Platform newParent)
@@ -528,16 +413,17 @@ namespace FMODUnity
         {
             public string Identifier;
             public Func<Platform> CreateInstance;
-        };
+        }
 
         // Adds a platform to the collection of templates. Platforms register themselves by using
         // [InitializeOnLoad] and calling this function from a static constructor.
         internal static void AddPlatformTemplate<T>(string identifier) where T : Platform
         {
-            PlatformTemplates.Add(new PlatformTemplate() {
-                    Identifier = identifier,
-                    CreateInstance = () => CreatePlatformInstance<T>(identifier)
-                });
+            PlatformTemplates.Add(new PlatformTemplate
+            {
+                Identifier = identifier,
+                CreateInstance = () => CreatePlatformInstance<T>(identifier)
+            });
         }
 
         private static Platform CreatePlatformInstance<T>(string identifier) where T : Platform
@@ -552,21 +438,19 @@ namespace FMODUnity
         internal void OnEnable()
         {
             if (hasLoaded)
-            {
                 // Already loaded
                 return;
-            }
 
             hasLoaded = true;
 
 #if UNITY_EDITOR
-            if (editorSettings != null)
+            if (EditorSettings != null)
             {
                 // Clear the EditorSettings object in case it has not been reloaded (this can happen
                 // if the settings asset is modified on disk).
-                editorSettings.Clear();
+                EditorSettings.Clear();
 
-                editorSettings.RuntimeSettings = this;
+                EditorSettings.RuntimeSettings = this;
             }
 #endif
 
@@ -576,7 +460,7 @@ namespace FMODUnity
             PlayInEditorPlatform = Platforms.FirstOrDefault(platform => platform is PlatformPlayInEditor);
 
 #if UNITY_EDITOR
-            if (editorSettings != null)
+            if (EditorSettings != null)
             {
                 if (switchSettingsMigration == false)
                 {
@@ -596,21 +480,15 @@ namespace FMODUnity
                 sourceBankPathUnformatted = RuntimeUtils.GetCommonPlatformPath(sourceBankPathUnformatted);
 
                 // Remove the FMODStudioCache if in the old location
-                string oldCache = "Assets/Plugins/FMOD/Resources/FMODStudioCache.asset";
-                if (File.Exists(oldCache))
-                {
-                    AssetDatabase.DeleteAsset(oldCache);
-                }
+                var oldCache = "Assets/Plugins/FMOD/Resources/FMODStudioCache.asset";
+                if (File.Exists(oldCache)) AssetDatabase.DeleteAsset(oldCache);
 
-                editorSettings.AddMissingPlatforms();
+                EditorSettings.AddMissingPlatforms();
 
                 // Add all known platforms to the settings asset. We can only do this if the Settings
                 // object is already in the asset database, which won't be the case if we're inside the
                 // CreateInstance call in the Instance accessor above.
-                if (AssetDatabase.Contains(this))
-                {
-                    editorSettings.AddPlatformsToAsset();
-                }
+                if (AssetDatabase.Contains(this)) EditorSettings.AddPlatformsToAsset();
             }
 #endif
 
@@ -623,16 +501,16 @@ namespace FMODUnity
             Platforms.Clear();
 
 #if UNITY_EDITOR
-            string assetPath = AssetDatabase.GetAssetPath(this);
-            UnityEngine.Object[] assets = AssetDatabase.LoadAllAssetsAtPath(assetPath);
-            Platform[] assetPlatforms = assets.OfType<Platform>().ToArray();
+            var assetPath = AssetDatabase.GetAssetPath(this);
+            var assets = AssetDatabase.LoadAllAssetsAtPath(assetPath);
+            var assetPlatforms = assets.OfType<Platform>().ToArray();
 #else
             Platform[] assetPlatforms = Resources.LoadAll<Platform>(SettingsAssetName);
 #endif
 
-            foreach (Platform newPlatform in assetPlatforms)
+            foreach (var newPlatform in assetPlatforms)
             {
-                Platform existingPlatform = FindPlatform(newPlatform.Identifier);
+                var existingPlatform = FindPlatform(newPlatform.Identifier);
 
                 if (existingPlatform != null)
                 {
@@ -651,7 +529,8 @@ namespace FMODUnity
                         platformToDestroy = newPlatform;
                     }
 
-                    RuntimeUtils.DebugLogWarningFormat("FMOD: Cleaning up duplicate platform: ID  = {0}, name = '{1}', type = {2}",
+                    RuntimeUtils.DebugLogWarningFormat(
+                        "FMOD: Cleaning up duplicate platform: ID  = {0}, name = '{1}', type = {2}",
                         platformToDestroy.Identifier, platformToDestroy.DisplayName, platformToDestroy.GetType().Name);
 
                     DestroyImmediate(platformToDestroy, true);
@@ -665,10 +544,7 @@ namespace FMODUnity
             }
 
 #if UNITY_EDITOR
-            if (editorSettings != null)
-            {
-                Platforms.ForEach(editorSettings.UpdateMigratedPlatform);
-            }
+            if (EditorSettings != null) Platforms.ForEach(EditorSettings.UpdateMigratedPlatform);
 #endif
         }
     }
@@ -676,93 +552,6 @@ namespace FMODUnity
     // This class stores data types and code used for migrating old settings.
     internal static class Legacy
     {
-#if UNITY_EDITOR
-        private const string RegisterStaticPluginsAssetPathRelative =
-            "/Plugins/FMOD/Cache/fmod_register_static_plugins.cpp";
-        private const string RegisterStaticPluginsAssetPathFull = "Assets" + RegisterStaticPluginsAssetPathRelative;
-
-        public static void CleanTemporaryChanges()
-        {
-            CleanIl2CppArgs();
-            CleanTemporaryFiles();
-        }
-
-        private static IEnumerable<string> AdditionalIl2CppFiles()
-        {
-            yield return Application.dataPath + RegisterStaticPluginsAssetPathRelative;
-            yield return Application.dataPath + "/Plugins/FMOD/src/Runtime/fmod_static_plugin_support.h";
-        }
-
-        public static void CleanIl2CppArgs()
-        {
-            const string Il2CppCommand_AdditionalCpp = "--additional-cpp";
-
-            string arguments = PlayerSettings.GetAdditionalIl2CppArgs();
-            string newArguments = arguments;
-
-            foreach (string path in AdditionalIl2CppFiles())
-            {
-                // Match on basename only in case the temp file location has moved
-                string basename = Regex.Escape(Path.GetFileName(path));
-                Regex regex = new Regex(Il2CppCommand_AdditionalCpp + "=\"[^\"]*" + basename + "\"");
-
-                for (int startIndex = 0; startIndex < newArguments.Length; )
-                {
-                    Match match = regex.Match(newArguments, startIndex);
-
-                    if (!match.Success)
-                    {
-                        break;
-                    }
-
-                    RuntimeUtils.DebugLogFormat("FMOD: Removing Il2CPP argument '{0}'", match.Value);
-
-                    int matchStart = match.Index;
-                    int matchEnd = match.Index + match.Length;
-
-                    // Consume an adjacent space if there is one
-                    if (matchStart > 0 && newArguments[matchStart - 1] == ' ')
-                    {
-                        --matchStart;
-                    }
-                    else if (matchEnd < newArguments.Length && newArguments[matchEnd] == ' ')
-                    {
-                        ++matchEnd;
-                    }
-
-                    newArguments = newArguments.Substring(0, matchStart) + newArguments.Substring(matchEnd);
-                    startIndex = matchStart;
-                }
-            }
-
-            if (newArguments != arguments)
-            {
-                PlayerSettings.SetAdditionalIl2CppArgs(newArguments);
-            }
-        }
-
-        public static void CleanTemporaryFiles()
-        {
-            if (EditorApplication.isPlayingOrWillChangePlaymode)
-            {
-                // Messing with the asset database while entering play mode causes a NullReferenceException
-                return;
-            }
-
-            string[] TemporaryFiles = {
-                RegisterStaticPluginsAssetPathFull,
-            };
-
-            foreach (string path in TemporaryFiles)
-            {
-                if (Settings.EditorSettings != null)
-                {
-                    Settings.EditorSettings.DeleteTemporaryFile(path);
-                }
-            }
-        }
-#endif
-
         [Serializable]
         public enum Platform
         {
@@ -792,46 +581,21 @@ namespace FMODUnity
             Reserved_1,
             Reserved_2,
             Reserved_3,
-            Count,
-        }
-
-        public class PlatformSettingBase
-        {
-            public Platform Platform;
-        }
-
-        public class PlatformSetting<T> : PlatformSettingBase
-        {
-            public T Value;
-        }
-
-        [Serializable]
-        public class PlatformIntSetting : PlatformSetting<int>
-        {
-        }
-
-        [Serializable]
-        public class PlatformStringSetting : PlatformSetting<string>
-        {
-        }
-
-        [Serializable]
-        public class PlatformBoolSetting : PlatformSetting<TriStateBool>
-        {
+            Count
         }
 
         // Copies a setting from one platform to another.
         public static void CopySetting<T, U>(List<T> list, Platform fromPlatform, Platform toPlatform)
             where T : PlatformSetting<U>, new()
         {
-            T fromSetting = list.Find((x) => x.Platform == fromPlatform);
-            T toSetting = list.Find((x) => x.Platform == toPlatform);
+            var fromSetting = list.Find(x => x.Platform == fromPlatform);
+            var toSetting = list.Find(x => x.Platform == toPlatform);
 
             if (fromSetting != null)
             {
                 if (toSetting == null)
                 {
-                    toSetting = new T() { Platform = toPlatform };
+                    toSetting = new T { Platform = toPlatform };
                     list.Add(toSetting);
                 }
 
@@ -893,6 +657,7 @@ namespace FMODUnity
                 case Platform.WebGL:
                     return "WebGL";
             }
+
             return "Unknown";
         }
 
@@ -981,5 +746,101 @@ namespace FMODUnity
                     return false;
             }
         }
+
+        public class PlatformSettingBase
+        {
+            public Platform Platform;
+        }
+
+        public class PlatformSetting<T> : PlatformSettingBase
+        {
+            public T Value;
+        }
+
+        [Serializable]
+        public class PlatformIntSetting : PlatformSetting<int>
+        {
+        }
+
+        [Serializable]
+        public class PlatformStringSetting : PlatformSetting<string>
+        {
+        }
+
+        [Serializable]
+        public class PlatformBoolSetting : PlatformSetting<TriStateBool>
+        {
+        }
+#if UNITY_EDITOR
+        private const string RegisterStaticPluginsAssetPathRelative =
+            "/Plugins/FMOD/Cache/fmod_register_static_plugins.cpp";
+
+        private const string RegisterStaticPluginsAssetPathFull = "Assets" + RegisterStaticPluginsAssetPathRelative;
+
+        public static void CleanTemporaryChanges()
+        {
+            CleanIl2CppArgs();
+            CleanTemporaryFiles();
+        }
+
+        private static IEnumerable<string> AdditionalIl2CppFiles()
+        {
+            yield return Application.dataPath + RegisterStaticPluginsAssetPathRelative;
+            yield return Application.dataPath + "/Plugins/FMOD/src/Runtime/fmod_static_plugin_support.h";
+        }
+
+        public static void CleanIl2CppArgs()
+        {
+            const string Il2CppCommand_AdditionalCpp = "--additional-cpp";
+
+            var arguments = PlayerSettings.GetAdditionalIl2CppArgs();
+            var newArguments = arguments;
+
+            foreach (var path in AdditionalIl2CppFiles())
+            {
+                // Match on basename only in case the temp file location has moved
+                var basename = Regex.Escape(Path.GetFileName(path));
+                var regex = new Regex(Il2CppCommand_AdditionalCpp + "=\"[^\"]*" + basename + "\"");
+
+                for (var startIndex = 0; startIndex < newArguments.Length;)
+                {
+                    var match = regex.Match(newArguments, startIndex);
+
+                    if (!match.Success) break;
+
+                    RuntimeUtils.DebugLogFormat("FMOD: Removing Il2CPP argument '{0}'", match.Value);
+
+                    var matchStart = match.Index;
+                    var matchEnd = match.Index + match.Length;
+
+                    // Consume an adjacent space if there is one
+                    if (matchStart > 0 && newArguments[matchStart - 1] == ' ')
+                        --matchStart;
+                    else if (matchEnd < newArguments.Length && newArguments[matchEnd] == ' ') ++matchEnd;
+
+                    newArguments = newArguments.Substring(0, matchStart) + newArguments.Substring(matchEnd);
+                    startIndex = matchStart;
+                }
+            }
+
+            if (newArguments != arguments) PlayerSettings.SetAdditionalIl2CppArgs(newArguments);
+        }
+
+        public static void CleanTemporaryFiles()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
+                // Messing with the asset database while entering play mode causes a NullReferenceException
+                return;
+
+            string[] TemporaryFiles =
+            {
+                RegisterStaticPluginsAssetPathFull
+            };
+
+            foreach (var path in TemporaryFiles)
+                if (Settings.EditorSettings != null)
+                    Settings.EditorSettings.DeleteTemporaryFile(path);
+        }
+#endif
     }
 }

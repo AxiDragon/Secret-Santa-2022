@@ -1,9 +1,16 @@
-﻿namespace ScriptableObjectArchitecture
+﻿using System;
+
+namespace ScriptableObjectArchitecture
 {
-    [System.Serializable]
+    [Serializable]
     public sealed class CharReference : BaseReference<char, CharVariable>
     {
-        public CharReference() : base() { }
-        public CharReference(char value) : base(value) { }
-    } 
+        public CharReference()
+        {
+        }
+
+        public CharReference(char value) : base(value)
+        {
+        }
+    }
 }

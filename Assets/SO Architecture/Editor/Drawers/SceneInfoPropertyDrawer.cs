@@ -31,10 +31,7 @@ namespace ScriptableObjectArchitecture.Editor
             var oldSceneAsset = AssetDatabase.LoadAssetAtPath<SceneAsset>(sceneNameProperty.stringValue);
             var sceneAsset = EditorGUI.ObjectField(sceneAssetRect, oldSceneAsset, typeof(SceneAsset), false);
             var sceneAssetPath = AssetDatabase.GetAssetPath(sceneAsset);
-            if (sceneNameProperty.stringValue != sceneAssetPath)
-            {
-                sceneNameProperty.stringValue = sceneAssetPath;
-            }
+            if (sceneNameProperty.stringValue != sceneAssetPath) sceneNameProperty.stringValue = sceneAssetPath;
 
             if (string.IsNullOrEmpty(sceneNameProperty.stringValue))
             {
@@ -61,16 +58,14 @@ namespace ScriptableObjectArchitecture.Editor
             EditorGUI.PropertyField(indexRect, sceneIndexProperty);
             EditorGUI.PropertyField(enabledRect, enabledProperty);
             EditorGUI.EndDisabledGroup();
-            if (EditorGUI.EndChangeCheck())
-            {
-                property.serializedObject.ApplyModifiedProperties();
-            }
+            if (EditorGUI.EndChangeCheck()) property.serializedObject.ApplyModifiedProperties();
             EditorGUI.EndProperty();
         }
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
-            return EditorGUIUtility.singleLineHeight * FIELD_COUNT + ((FIELD_COUNT - 1) * EditorGUIUtility.standardVerticalSpacing);
+            return EditorGUIUtility.singleLineHeight * FIELD_COUNT +
+                   (FIELD_COUNT - 1) * EditorGUIUtility.standardVerticalSpacing;
         }
     }
 }

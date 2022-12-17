@@ -1,7 +1,7 @@
-﻿#if UNITY_EDITOR
+﻿using UnityEngine;
+#if UNITY_EDITOR
 using UnityEditor;
 #endif
-using UnityEngine;
 
 /* Code made by LaneFox from Unity Community Forum */
 
@@ -20,10 +20,10 @@ public class FHierarchyIcons
     private static void EvaluateIcons(int instanceId, Rect selectionRect)
     {
 #if UNITY_EDITOR
-        GameObject go = EditorUtility.InstanceIDToObject(instanceId) as GameObject;
+        var go = EditorUtility.InstanceIDToObject(instanceId) as GameObject;
         if (go == null) return;
 
-        IFHierarchyIcon slotCon = go.GetComponent<IFHierarchyIcon>();
+        var slotCon = go.GetComponent<IFHierarchyIcon>();
         if (slotCon != null) DrawIcon(slotCon.EditorIconPath, selectionRect);
 #endif
     }
@@ -32,7 +32,7 @@ public class FHierarchyIcons
     {
 #if UNITY_EDITOR
         if (string.IsNullOrEmpty(texName)) return;
-        Rect r = new Rect(rect.x + rect.width - 16f, rect.y, 16f, 16f);
+        var r = new Rect(rect.x + rect.width - 16f, rect.y, 16f, 16f);
         GUI.DrawTexture(r, GetTex(texName));
 #endif
     }
