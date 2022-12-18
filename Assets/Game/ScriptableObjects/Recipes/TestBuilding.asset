@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: TestBuilding
   m_EditorClassIdentifier: 
   ingredients:
-  - {fileID: 11400000, guid: 3810312dc1a06724594a27d66cddb260, type: 2}
-  - {fileID: 11400000, guid: 3810312dc1a06724594a27d66cddb260, type: 2}
-  - {fileID: 11400000, guid: 419c15f32fcfdd449b909c43ec580409, type: 2}
-  resultBuilding: {fileID: 4298114672803566002, guid: ddd8bb68b561f384cabf0cb948c2d84c,
+  - {fileID: 11400000, guid: 7c5568738129bef4bb09b5209247e075, type: 2}
+  - {fileID: 11400000, guid: 7c5568738129bef4bb09b5209247e075, type: 2}
+  - {fileID: 11400000, guid: 7c5568738129bef4bb09b5209247e075, type: 2}
+  resultBuilding: {fileID: 3971309696050526133, guid: d537bde307dfe8c49849d9e52e775f28,
     type: 3}
   resultBuildingTexture: {fileID: 0}

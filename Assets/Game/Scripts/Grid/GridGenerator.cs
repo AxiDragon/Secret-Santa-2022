@@ -14,8 +14,12 @@ public class GridGenerator : MonoBehaviour
         GenerateGrid();
     }
 
+    
     private void OnDrawGizmos()
     {
+        if (Application.isPlaying)
+            return;
+
         Gizmos.color = Color.green;
 
         for (var i = 0; i < gridLength; i++)

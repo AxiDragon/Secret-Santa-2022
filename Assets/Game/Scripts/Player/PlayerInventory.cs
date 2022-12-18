@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 public class PlayerInventory : MonoBehaviour
 {
@@ -12,11 +11,6 @@ public class PlayerInventory : MonoBehaviour
     {
         Gizmos.color = Color.cyan;
         Gizmos.DrawWireSphere(transform.position, pickupCheckRange);
-    }
-
-    public void GatherIngredientsInput(InputAction.CallbackContext callbackContext)
-    {
-        if (callbackContext.performed) GatherIngredients();
     }
 
     public void GatherIngredients()

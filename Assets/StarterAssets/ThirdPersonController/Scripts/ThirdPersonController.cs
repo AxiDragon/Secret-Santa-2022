@@ -73,6 +73,8 @@ namespace StarterAssets
         [Tooltip("For locking the camera position on all axis")]
         public bool LockCameraPosition;
 
+        private readonly float _terminalVelocity = 53.0f;
+
         private float _animationBlend;
         private Animator _animator;
         private int _animIDFreeFall;
@@ -104,7 +106,6 @@ namespace StarterAssets
         // player
         private float _speed;
         private float _targetRotation;
-        private readonly float _terminalVelocity = 53.0f;
         private float _verticalVelocity;
 
         private bool IsCurrentDeviceMouse

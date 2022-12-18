@@ -8,11 +8,11 @@ public class BuildingConstructor : MonoBehaviour
 {
     [SerializeField] private Material previewMaterial;
     [SerializeField] private GridPointListVariable gridPointList;
-    [SerializeField] private Building testBuilding;
+    [HideInInspector] public Building currentBuilding;
     [SerializeField] private LayerMask raycastMask;
     [SerializeField] private UnityEvent activateBuildMode;
     [SerializeField] private UnityEvent deActivateBuildMode;
-    private bool buildModeActive;
+    [HideInInspector] public bool buildModeActive;
     private GridPoint closestGridPoint;
     private Building previewBuilding;
 
@@ -30,7 +30,7 @@ public class BuildingConstructor : MonoBehaviour
                 Cursor.visible = true;
 
                 ClosestGridPoint = gridPointList.GetClosestGridPoint(GetMousePosition());
-                GeneratePreview(testBuilding);
+                GeneratePreview(currentBuilding);
             }
             else
             {
@@ -68,7 +68,7 @@ public class BuildingConstructor : MonoBehaviour
 
     public void ToggleBuildModeInput(InputAction.CallbackContext callback)
     {
-        if (callback.action.WasPerformedThisFrame())
+        if (callback.performed && currentBuilding)
             BuildModeActive = !BuildModeActive;
     }
 
@@ -79,29 +79,26 @@ public class BuildingConstructor : MonoBehaviour
 
         Debug.DrawRay(ray.origin, ray.direction * 500f);
 
-        if (Physics.Raycast(ray, out hit, 500f, raycastMask.value))
-        {
-            print(hit.collider.name);
-            return hit.point;
-        }
+        if (Physics.Raycast(ray, out hit, 500f, raycastMask.value)) return hit.point;
 
         return transform.position;
     }
 
-    public void BuildInput(InputAction.CallbackContext callback)
+    public void Build()
     {
-        if (callback.action.WasPerformedThisFrame() && ClosestGridPoint != null)
-        {
-            Destroy(previewBuilding.gameObject);
-            Build(testBuilding);
-        }
+        var buildingInstance = Instantiate(currentBuilding, ClosestGridPoint.transform);
+        buildingInstance.transform.localPosition = Vector3.up * buildingInstance.buildingOffset;
+        buildingInstance.AddPointsToGrid();
+
+        ResetBuildMode();
+
+        SpawnObjectEasing(buildingInstance.gameObject);
     }
 
-    public void Build(Building building)
+    private void ResetBuildMode()
     {
-        var buildingInstance = Instantiate(building, ClosestGridPoint.transform);
-        buildingInstance.transform.localPosition = Vector3.up * buildingInstance.buildingOffset;
-        SpawnObjectEasing(buildingInstance.gameObject);
+        currentBuilding = null;
+        BuildModeActive = false;
     }
 
     private static void SpawnObjectEasing(GameObject buildingInstance)
@@ -116,14 +113,25 @@ public class BuildingConstructor : MonoBehaviour
         previewBuilding = Instantiate(building, ClosestGridPoint.transform);
         previewBuilding.transform.localPosition = Vector3.up * previewBuilding.buildingOffset;
         previewBuilding.isPreview = true;
+        previewBuilding.gameObject.layer = LayerMask.NameToLayer("Preview");
+
         SpawnObjectEasing(previewBuilding.gameObject);
+        DisableColliders(previewBuilding.gameObject);
         ApplyPreviewMaterials(previewBuilding.gameObject);
+    }
+
+    private void DisableColliders(GameObject gameObject)
+    {
+        foreach (var collider in gameObject.GetComponents<Collider>()) collider.enabled = false;
+
+        foreach (var collider in gameObject.GetComponentsInChildren<Collider>()) collider.enabled = false;
     }
 
     public void MovePreview(GridPoint point)
     {
-        previewBuilding.transform.parent = point.transform;
-        previewBuilding.transform.localPosition = Vector3.up * previewBuilding.buildingOffset;
+        var buildingTransform = previewBuilding.transform;
+        buildingTransform.parent = point.transform;
+        buildingTransform.localPosition = Vector3.up * previewBuilding.buildingOffset;
     }
 
     private void ApplyPreviewMaterials(GameObject gameObject)
