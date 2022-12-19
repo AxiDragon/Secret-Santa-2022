@@ -13,4 +13,4 @@ MonoBehaviour:
   m_Name: Metal
   m_EditorClassIdentifier: 
   ingredientName: Metal
-  sprite: {fileID: 21300000, guid: 8e364bf61818c004b87601d70e037854, type: 3}
+  sprite: {fileID: 21300000, guid: 586c6d75ad54a6e46987ba92f856b43a, type: 3}

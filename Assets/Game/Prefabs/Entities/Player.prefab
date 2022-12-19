@@ -58,7 +58,7 @@ CharacterController:
   m_Height: 1.77
   m_Radius: 0.3
   m_SlopeLimit: 45
-  m_StepOffset: 0.3
+  m_StepOffset: 0.5
   m_SkinWidth: 0.08
   m_MinMoveDistance: 0
   m_Center: {x: 0, y: 0.901, z: 0}
@@ -117,7 +117,7 @@ MonoBehaviour:
   SprintSpeedMultiplier: 1.5
   SwimSpeedMultiplier: 1
   MidairSpeed: 6
-  JumpHeight: 1.5
+  JumpHeight: 4.3
   EnableMidairJumps: 1
   AllowedMidairJumps: 0
   EnableMidairMovement: 2
@@ -286,7 +286,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ingredients: {fileID: 11400000, guid: 4737c83c12845a1469bcf1477541f171, type: 2}
-  pickupCheckRange: 2.5
+  pickupCheckRange: 1.75
   pickupLayerMask:
     serializedVersion: 2
     m_Bits: 128
@@ -302,7 +302,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 22091b6df0eab52469b361bf2a012d68, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  brewingRange: 2.5
+  brewingRange: 2
   brewingPotMask:
     serializedVersion: 2
     m_Bits: 256
@@ -394,6 +394,8 @@ GameObject:
   - component: {fileID: 3095769205356414931}
   - component: {fileID: 8461134614890043444}
   - component: {fileID: 8406619393055915221}
+  - component: {fileID: 8711546022701139064}
+  - component: {fileID: 4344437545833203471}
   m_Layer: 0
   m_Name: Camera
   m_TagString: MainCamera
@@ -409,7 +411,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5869146933897630881}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: -1.25, z: 0}
+  m_LocalPosition: {x: 0, y: 2.25, z: -2.5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -482,7 +484,7 @@ MonoBehaviour:
     m_Bits: 1
   m_VolumeTrigger: {fileID: 0}
   m_VolumeFrameworkUpdateModeOption: 2
-  m_RenderPostProcessing: 0
+  m_RenderPostProcessing: 1
   m_Antialiasing: 0
   m_AntialiasingQuality: 2
   m_StopNaN: 0
@@ -505,6 +507,35 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   attenuationObject: {fileID: 0}
+--- !u!114 &8711546022701139064
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5869146933897630881}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 172515602e62fb746b5d573b38a5fe58, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_IsGlobal: 1
+  priority: 0
+  blendDistance: 0
+  weight: 1
+  sharedProfile: {fileID: 11400000, guid: 6d47db36c0eb53b448e5e0019b32cd1b, type: 2}
+--- !u!114 &4344437545833203471
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5869146933897630881}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 272e4c85478d3e64ca815de45a8720db, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &3852416115885458404
 PrefabInstance:
   m_ObjectHideFlags: 0

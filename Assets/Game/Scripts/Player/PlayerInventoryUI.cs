@@ -17,8 +17,10 @@ public class PlayerInventoryUI : MonoBehaviour
         for (var i = 0; i < uiItems.Length; i++)
             if (i < ingredientList.value.Count)
             {
-                var ingredientSprite = ingredientList.value[i].sprite;
-                uiItems[i].SetSprite(ingredientSprite);
+                Sprite ingredientSprite = ingredientList.value[i].sprite;
+                
+                if (ingredientSprite != uiItems[i].itemSprite.sprite)
+                    uiItems[i].SetSprite(ingredientSprite);
             }
             else
             {

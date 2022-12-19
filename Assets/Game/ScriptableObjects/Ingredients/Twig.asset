@@ -13,4 +13,4 @@ MonoBehaviour:
   m_Name: Twig
   m_EditorClassIdentifier: 
   ingredientName: Twig
-  sprite: {fileID: 21300000, guid: 888b3ac3eef59024585a22e11c913202, type: 3}
+  sprite: {fileID: 21300000, guid: 5e5a0d8404d54354aa379d8e8ff1e947, type: 3}

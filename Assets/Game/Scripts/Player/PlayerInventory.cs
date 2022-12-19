@@ -18,6 +18,7 @@ public class PlayerInventory : MonoBehaviour
         var inRangeIngredients = new List<IngredientInfo>();
 
         foreach (var c in Physics.OverlapSphere(transform.position, pickupCheckRange, pickupLayerMask))
+        {
             if (c.TryGetComponent(out Ingredient ingredient))
             {
                 var ingredientInfo = new IngredientInfo(ingredient,
@@ -38,6 +39,7 @@ public class PlayerInventory : MonoBehaviour
                     }
                 }
             }
+        }
 
         for (var i = 0; i < inRangeIngredients.Count; i++)
         {
@@ -48,7 +50,10 @@ public class PlayerInventory : MonoBehaviour
                 inRangeIngredients[i].ingredient.PickUp(out var success);
 
             if (success)
+            {
                 ingredients.value.Add(ingredientPickup);
+                break;
+            }
         }
     }
 

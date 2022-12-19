@@ -25,20 +25,19 @@ public class GridGenerator : MonoBehaviour
         for (var i = 0; i < gridLength; i++)
         for (var j = 0; j < gridWidth; j++)
         {
-            var pos = new Vector3(i * offset, 0f, j * offset);
+            var pos = new Vector3(i * offset, 0f, j * offset) + transform.position;
             Gizmos.DrawSphere(pos, .1f);
         }
     }
 
     private void GenerateGrid()
     {
-        grid.value.Clear();
         for (var i = 0; i < gridLength; i++)
         {
             var list = new List<GridPoint>();
             for (var j = 0; j < gridWidth; j++)
             {
-                var pos = new Vector3(i * offset, 0f, j * offset);
+                var pos = new Vector3(i * offset, 0f, j * offset)  + transform.position;
                 var v = Instantiate(basePoint, pos, Quaternion.identity);
                 v.name = $"Point {i} {j}";
                 list.Add(v);

@@ -87,7 +87,6 @@ public class BuildingConstructor : MonoBehaviour
     public void Build()
     {
         var buildingInstance = Instantiate(currentBuilding, ClosestGridPoint.transform);
-        buildingInstance.transform.localPosition = Vector3.up * buildingInstance.buildingOffset;
         buildingInstance.AddPointsToGrid();
 
         ResetBuildMode();
@@ -111,7 +110,6 @@ public class BuildingConstructor : MonoBehaviour
     public void GeneratePreview(Building building)
     {
         previewBuilding = Instantiate(building, ClosestGridPoint.transform);
-        previewBuilding.transform.localPosition = Vector3.up * previewBuilding.buildingOffset;
         previewBuilding.isPreview = true;
         previewBuilding.gameObject.layer = LayerMask.NameToLayer("Preview");
 
@@ -131,7 +129,7 @@ public class BuildingConstructor : MonoBehaviour
     {
         var buildingTransform = previewBuilding.transform;
         buildingTransform.parent = point.transform;
-        buildingTransform.localPosition = Vector3.up * previewBuilding.buildingOffset;
+        buildingTransform.localPosition = Vector3.zero;
     }
 
     private void ApplyPreviewMaterials(GameObject gameObject)

@@ -13,4 +13,4 @@ MonoBehaviour:
   m_Name: Rock
   m_EditorClassIdentifier: 
   ingredientName: Rock
-  sprite: {fileID: 21300000, guid: 8e364bf61818c004b87601d70e037854, type: 3}
+  sprite: {fileID: 21300000, guid: b9abd69403d303342a6cad81f14b1f78, type: 3}

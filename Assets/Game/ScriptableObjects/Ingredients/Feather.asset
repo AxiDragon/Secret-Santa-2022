@@ -13,4 +13,4 @@ MonoBehaviour:
   m_Name: Feather
   m_EditorClassIdentifier: 
   ingredientName: Feather
-  sprite: {fileID: 21300000, guid: ab2206f59fdd8d04f927ec36fe5b652e, type: 3}
+  sprite: {fileID: 21300000, guid: 4957e0abba35d7542b7b29878b57a64d, type: 3}
