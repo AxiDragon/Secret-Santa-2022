@@ -51,4 +51,13 @@ public class PlayerInputManager : MonoBehaviour
         if (buildingConstructor.buildModeActive)
             buildingConstructor.RotateBuilding();
     }
+
+    public void QuitGame(InputAction.CallbackContext callbackContext)
+    {
+        if (!callbackContext.performed)
+            return;
+        
+        if (Application.platform != RuntimePlatform.WebGLPlayer)
+            Application.Quit();
+    }
 }

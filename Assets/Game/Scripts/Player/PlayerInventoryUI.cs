@@ -49,7 +49,7 @@ public class PlayerInventoryUI : MonoBehaviour
 
         tooltips[id].tooltipDisplayed = true;
         
-        float targetPosition = show ? 100f * id : -100f;
+        float targetPosition = show ? 100f * id : -200f;
         tooltips[id].transform.DOMoveY(targetPosition, tooltipSwitchingTime).SetEase(Ease.InOutSine);
         tooltips[id].buttonPrompt.text = button;
         tooltips[id].functionPrompt.text = functionPrompt;
@@ -58,13 +58,13 @@ public class PlayerInventoryUI : MonoBehaviour
     public void DisplayTooltip(bool show, int id = 0)
     {
         tooltips[id].tooltipDisplayed = show;
-        float targetPosition = show ? 100f * id : -100f;
+        float targetPosition = show ? 100f * id : -200f;
         tooltips[id].transform.DOMoveY(targetPosition, tooltipSwitchingTime).SetEase(Ease.InOutSine);
     }
 
     private void SwapTooltip(string button, string functionPrompt, int id = 0)
     {
-        tooltips[id].transform.DOMoveY(-100f, tooltipSwitchingTime).SetEase(Ease.InOutSine).OnComplete(() =>
+        tooltips[id].transform.DOMoveY(-200f, tooltipSwitchingTime).SetEase(Ease.InOutSine).OnComplete(() =>
         {
             tooltips[id].buttonPrompt.text = button;
             tooltips[id].functionPrompt.text = functionPrompt;
