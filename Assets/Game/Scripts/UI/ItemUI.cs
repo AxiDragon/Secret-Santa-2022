@@ -8,6 +8,9 @@ public class ItemUI : MonoBehaviour
 
     public void ClearSprite()
     {
+        if (itemSprite == null)
+            return;
+        
         itemSprite.transform.DOScale(0f, .5f).SetEase(Ease.OutBack).OnComplete(() =>
         {
             itemSprite.color = Vector4.zero;

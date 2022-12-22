@@ -1,5 +1,7 @@
+using System;
 using System.Linq;
 using DG.Tweening;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.InputSystem;
@@ -8,11 +10,26 @@ public class BuildingConstructor : MonoBehaviour
 {
     [SerializeField] private Material previewMaterial;
     [SerializeField] private GridPointListVariable gridPointList;
-    [HideInInspector] public Building currentBuilding;
+    private Building currentBuilding = null;
+
+    public Building CurrentBuilding
+    {
+        get => currentBuilding;
+        set
+        {
+            currentBuilding = value;
+            playerInventoryUI.DisplayInventory(currentBuilding == null);
+            if (currentBuilding != null)
+                playerInventoryUI.DisplayTooltip(true, "tab", "build mode");
+        }
+    }
+
     [SerializeField] private LayerMask raycastMask;
     [SerializeField] private UnityEvent activateBuildMode;
     [SerializeField] private UnityEvent deActivateBuildMode;
+    [SerializeField] private float maxBuildDistance = 25f;
     [HideInInspector] public bool buildModeActive;
+    private PlayerInventoryUI playerInventoryUI;
     private GridPoint closestGridPoint;
     private Building previewBuilding;
 
@@ -26,11 +43,13 @@ public class BuildingConstructor : MonoBehaviour
             if (buildModeActive)
             {
                 activateBuildMode?.Invoke();
+                playerInventoryUI.DisplayTooltip(true, "e", "build");
+                playerInventoryUI.DisplayTooltip(true, "q", "rotate", 1);
                 Cursor.lockState = CursorLockMode.None;
                 Cursor.visible = true;
 
                 ClosestGridPoint = gridPointList.GetClosestGridPoint(GetMousePosition());
-                GeneratePreview(currentBuilding);
+                GeneratePreview(CurrentBuilding);
             }
             else
             {
@@ -39,6 +58,15 @@ public class BuildingConstructor : MonoBehaviour
 
                 if (previewBuilding != null)
                     Destroy(previewBuilding.gameObject);
+                
+                playerInventoryUI.DisplayTooltip(false, 1);
+
+                if (CurrentBuilding == null)
+                {
+                    playerInventoryUI.DisplayTooltip(false);
+                }
+                else
+                    playerInventoryUI.DisplayTooltip(true, "tab", "build mode");
             }
         }
     }
@@ -60,33 +88,34 @@ public class BuildingConstructor : MonoBehaviour
         }
     }
 
+    private void Awake()
+    {
+        playerInventoryUI = FindObjectOfType<PlayerInventoryUI>();
+    }
+
     private void Update()
     {
         if (buildModeActive)
             ClosestGridPoint = gridPointList.GetClosestGridPoint(GetMousePosition());
     }
 
-    public void ToggleBuildModeInput(InputAction.CallbackContext callback)
-    {
-        if (callback.performed && currentBuilding)
-            BuildModeActive = !BuildModeActive;
-    }
-
     private Vector3 GetMousePosition()
     {
         var ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-        RaycastHit hit;
 
-        Debug.DrawRay(ray.origin, ray.direction * 500f);
-
-        if (Physics.Raycast(ray, out hit, 500f, raycastMask.value)) return hit.point;
+        if (Physics.Raycast(ray, out var hit, maxBuildDistance, raycastMask.value)) return hit.point;
 
         return transform.position;
     }
 
     public void Build()
     {
-        var buildingInstance = Instantiate(currentBuilding, ClosestGridPoint.transform);
+        var buildingInstance = Instantiate(CurrentBuilding, ClosestGridPoint.transform);
+
+        var buildingInstanceTransform = buildingInstance.transform;
+        buildingInstanceTransform.rotation = previewBuilding.transform.rotation;
+        buildingInstanceTransform.localPosition = Vector3.zero;
+
         buildingInstance.AddPointsToGrid();
 
         ResetBuildMode();
@@ -94,9 +123,15 @@ public class BuildingConstructor : MonoBehaviour
         SpawnObjectEasing(buildingInstance.gameObject);
     }
 
+    public void ToggleBuildMode()
+    {
+        if (CurrentBuilding)
+            BuildModeActive = !BuildModeActive;
+    }
+
     private void ResetBuildMode()
     {
-        currentBuilding = null;
+        CurrentBuilding = null;
         BuildModeActive = false;
     }
 
@@ -110,6 +145,7 @@ public class BuildingConstructor : MonoBehaviour
     public void GeneratePreview(Building building)
     {
         previewBuilding = Instantiate(building, ClosestGridPoint.transform);
+        previewBuilding.transform.localPosition = Vector3.zero;
         previewBuilding.isPreview = true;
         previewBuilding.gameObject.layer = LayerMask.NameToLayer("Preview");
 
@@ -146,5 +182,19 @@ public class BuildingConstructor : MonoBehaviour
 
             renderers[i].materials = previewMaterials;
         }
+    }
+
+    public void RotateBuilding()
+    {
+        if (previewBuilding != null)
+        {
+            previewBuilding.transform.eulerAngles += Vector3.up * 90f;
+        }
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        Gizmos.color = Color.green;
+        Gizmos.DrawWireSphere(transform.position, maxBuildDistance);
     }
 }

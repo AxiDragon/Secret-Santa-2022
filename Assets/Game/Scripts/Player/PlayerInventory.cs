@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -6,11 +7,51 @@ public class PlayerInventory : MonoBehaviour
     public IngredientList ingredients;
     [SerializeField] private float pickupCheckRange = 5f;
     [SerializeField] private LayerMask pickupLayerMask;
+    public bool canPickup;
+    private PlayerInventoryUI playerInventoryUI;
+    private BuildingConstructor buildingConstructor;
+
+    public bool CanPickup
+    {
+        get => canPickup;
+        set
+        {
+            bool previousValue = canPickup;
+            canPickup = value;
+
+            if (previousValue != value)
+            {
+                playerInventoryUI.DisplayTooltip(canPickup, "e", "gather");
+            }
+        }
+    }
+
+    private void Awake()
+    {
+        playerInventoryUI = FindObjectOfType<PlayerInventoryUI>();
+        buildingConstructor = GetComponent<BuildingConstructor>();
+    }
 
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.cyan;
         Gizmos.DrawWireSphere(transform.position, pickupCheckRange);
+    }
+
+    private void Update()
+    {
+        CanPickup = CheckCanPickup();
+    }
+
+    private bool CheckCanPickup()
+    {
+        if (buildingConstructor.CurrentBuilding != null)
+            return false;
+        
+        if (ingredients.value.Count >= 3)
+            return false;
+
+        return Physics.CheckSphere(transform.position, pickupCheckRange, pickupLayerMask);
     }
 
     public void GatherIngredients()

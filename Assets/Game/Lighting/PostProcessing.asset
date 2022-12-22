@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   components:
   - {fileID: 6972806042203683569}
-  - {fileID: 3529935207993967844}
---- !u!114 &3529935207993967844
+  - {fileID: 5926396241760290843}
+--- !u!114 &5926396241760290843
 MonoBehaviour:
   m_ObjectHideFlags: 3
   m_CorrespondingSourceObject: {fileID: 0}
@@ -24,25 +24,25 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 899c54efeace73346a0a16faa3afe726, type: 3}
-  m_Name: Vignette
+  m_Script: {fileID: 11500000, guid: 66f335fb1ffd8684294ad653bf1c7564, type: 3}
+  m_Name: ColorAdjustments
   m_EditorClassIdentifier: 
   active: 1
-  color:
+  postExposure:
     m_OverrideState: 1
-    m_Value: {r: 1, g: 0.9306997, b: 0.91886795, a: 1}
-  center:
-    m_OverrideState: 1
-    m_Value: {x: 0.5, y: 0.5}
-  intensity:
-    m_OverrideState: 1
-    m_Value: 0.596
-  smoothness:
-    m_OverrideState: 1
-    m_Value: 1
-  rounded:
+    m_Value: 0.07
+  contrast:
     m_OverrideState: 0
-    m_Value: 0
+    m_Value: 3
+  colorFilter:
+    m_OverrideState: 1
+    m_Value: {r: 1, g: 0.9404917, b: 0.8528302, a: 1}
+  hueShift:
+    m_OverrideState: 0
+    m_Value: -20
+  saturation:
+    m_OverrideState: 1
+    m_Value: -15
 --- !u!114 &6972806042203683569
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -58,13 +58,13 @@ MonoBehaviour:
   active: 1
   threshold:
     m_OverrideState: 1
-    m_Value: 0.8
+    m_Value: 2
   intensity:
     m_OverrideState: 1
-    m_Value: 0.7
+    m_Value: 5
   scatter:
     m_OverrideState: 1
-    m_Value: 0.7
+    m_Value: 0.152
   clamp:
     m_OverrideState: 0
     m_Value: 65472

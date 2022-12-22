@@ -11,6 +11,7 @@ public class BrewingPot : MonoBehaviour
     public RecipeScriptableObject GetFittingRecipe(ObservableCollection<IngredientScriptableObject> inputIngredients)
     {
         var inputIngredientsInstance = inputIngredients.ToList();
+        
         for (var i = 0; i < recipes.Length; i++)
         {
             var recipeIngredients = recipes[i].ingredients;

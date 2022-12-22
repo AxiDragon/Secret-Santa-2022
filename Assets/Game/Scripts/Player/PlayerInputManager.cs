@@ -14,6 +14,13 @@ public class PlayerInputManager : MonoBehaviour
         playerInventory = GetComponent<PlayerInventory>();
     }
 
+    public void InputTab(InputAction.CallbackContext callbackContext)
+    {
+        if (!callbackContext.performed)
+            return;
+        
+        buildingConstructor.ToggleBuildMode();
+    }
     public void InputE(InputAction.CallbackContext callbackContext)
     {
         if (!callbackContext.performed)
@@ -24,12 +31,24 @@ public class PlayerInputManager : MonoBehaviour
             buildingConstructor.Build();
             return;
         }
-
+        
+        if (buildingConstructor.CurrentBuilding)
+            return;
+        
         playerBrewer.AttemptBrew(out var success);
 
         if (success)
             return;
 
         playerInventory.GatherIngredients();
+    }
+
+    public void InputQ(InputAction.CallbackContext callbackContext)
+    {
+        if (!callbackContext.performed)
+            return;
+        
+        if (buildingConstructor.buildModeActive)
+            buildingConstructor.RotateBuilding();
     }
 }

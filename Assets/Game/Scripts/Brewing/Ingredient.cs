@@ -1,3 +1,4 @@
+using System;
 using DG.Tweening;
 using UnityEngine;
 
@@ -5,20 +6,35 @@ using UnityEngine;
 public class Ingredient : MonoBehaviour
 {
     public IngredientScriptableObject ingredientScriptableObject;
+    [SerializeField] private bool isInfinite;
+    private float startingScale;
     private bool pickedUp;
+
+    private void Awake()
+    {
+        startingScale = transform.localScale.x;
+    }
 
     public IngredientScriptableObject PickUp(out bool success)
     {
-        if (pickedUp)
+        if (!isInfinite)
         {
-            success = false;
-            return null;
+            if (pickedUp)
+            {
+                success = false;
+                return null;
+            }
+            pickedUp = true;
+            transform.DOScale(0f, 1f).SetEase(Ease.InBounce).OnComplete(() => Destroy(gameObject));
+        }
+        else
+        {
+            transform.DOScale(startingScale * .85f, .2f).SetEase(Ease.InOutCirc)
+                .OnComplete(() => transform.DOScale(startingScale, .2f).SetEase(Ease.InOutCirc));
         }
 
-        pickedUp = true;
-        transform.DOScale(0f, 1f).SetEase(Ease.InBounce).OnComplete(() => Destroy(gameObject));
-
         success = true;
+        
         return ingredientScriptableObject;
     }
 }

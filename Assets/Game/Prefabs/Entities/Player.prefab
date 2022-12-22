@@ -58,7 +58,7 @@ CharacterController:
   m_Height: 1.77
   m_Radius: 0.3
   m_SlopeLimit: 45
-  m_StepOffset: 0.5
+  m_StepOffset: 0.55
   m_SkinWidth: 0.08
   m_MinMoveDistance: 0
   m_Center: {x: 0, y: 0.901, z: 0}
@@ -174,9 +174,9 @@ MonoBehaviour:
   RotationYMin: -89.9
   RotationYMax: 89.9
   RotationSmoothTime: 0.1
-  ZoomSensitivity: 15
+  ZoomSensitivity: 10
   MinDistance: 1
-  MaxDistance: 20
+  MaxDistance: 50
   DistanceSmoothTime: 0.7
   StartRotationX: 0
   StartRotationY: 15
@@ -272,6 +272,7 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 1
         m_CallState: 2
+  maxBuildDistance: 20
   buildModeActive: 0
 --- !u!114 &8899016019047257932
 MonoBehaviour:
@@ -363,9 +364,9 @@ MonoBehaviour:
     m_ActionName: Player/Build[/Keyboard/e]
   - m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 7439471537328334831}
-        m_TargetAssemblyTypeName: BuildingConstructor, Assembly-CSharp
-        m_MethodName: ToggleBuildModeInput
+      - m_Target: {fileID: 9082014374424128856}
+        m_TargetAssemblyTypeName: PlayerInputManager, Assembly-CSharp
+        m_MethodName: InputTab
         m_Mode: 0
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -377,6 +378,22 @@ MonoBehaviour:
         m_CallState: 2
     m_ActionId: 2bbc2f7c-de9d-47bd-bf36-ee1db5989508
     m_ActionName: Player/ToggleBuildMode[/Keyboard/tab]
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 9082014374424128856}
+        m_TargetAssemblyTypeName: PlayerInputManager, Assembly-CSharp
+        m_MethodName: InputQ
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: 50c480a4-0359-4627-af7d-2f7221c424af
+    m_ActionName: Player/Q Input[/Keyboard/q]
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: 
   m_DefaultActionMap: Player
