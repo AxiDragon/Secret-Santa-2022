@@ -6,12 +6,14 @@ public class PlayerInputManager : MonoBehaviour
     private BuildingConstructor buildingConstructor;
     private PlayerBrewer playerBrewer;
     private PlayerInventory playerInventory;
+    private PauseMenu pauseMenu;
 
     private void Awake()
     {
         buildingConstructor = GetComponent<BuildingConstructor>();
         playerBrewer = GetComponent<PlayerBrewer>();
         playerInventory = GetComponent<PlayerInventory>();
+        pauseMenu = FindObjectOfType<PauseMenu>();
     }
 
     public void InputTab(InputAction.CallbackContext callbackContext)
@@ -52,12 +54,11 @@ public class PlayerInputManager : MonoBehaviour
             buildingConstructor.RotateBuilding();
     }
 
-    public void QuitGame(InputAction.CallbackContext callbackContext)
+    public void InputEscape(InputAction.CallbackContext callbackContext)
     {
         if (!callbackContext.performed)
             return;
         
-        if (Application.platform != RuntimePlatform.WebGLPlayer)
-            Application.Quit();
+        pauseMenu.DisplayPauseMenu();
     }
 }

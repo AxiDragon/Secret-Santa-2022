@@ -1,12 +1,20 @@
+using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using DG.Tweening;
 using UnityEngine;
+using UnityEngine.VFX;
 
 public class BrewingPot : MonoBehaviour
 {
     public RecipeScriptableObject[] recipes;
+    private VisualEffect brewEffect;
     [SerializeField] private Transform potModel;
+
+    private void Awake()
+    {
+        brewEffect = GetComponentInChildren<VisualEffect>();
+    }
 
     public RecipeScriptableObject GetFittingRecipe(ObservableCollection<IngredientScriptableObject> inputIngredients)
     {
@@ -26,11 +34,12 @@ public class BrewingPot : MonoBehaviour
     public Building Brew(ref ObservableCollection<IngredientScriptableObject> ingredients,
         RecipeScriptableObject recipe)
     {
-        for (var i = 0; i < recipe.ingredients.Count; i++) ingredients.Remove(recipe.ingredients[i]);
+        for (var i = recipe.ingredients.Count - 1; i >= 0; i--) ingredients.Remove(recipe.ingredients[i]);
 
         potModel.DOScale(.8f, .3f).SetEase(Ease.InOutSine)
             .OnComplete(() => potModel.DOScale(1f, .5f).SetEase(Ease.OutBack));
 
+        brewEffect.Play();
         return recipe.resultBuilding;
     }
 }

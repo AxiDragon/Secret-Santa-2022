@@ -1,4 +1,5 @@
 using System;
+using FMODUnity;
 using UnityEngine;
 
 public class PlayerBrewer : MonoBehaviour
@@ -6,6 +7,7 @@ public class PlayerBrewer : MonoBehaviour
     [SerializeField] private float brewingRange = 2.5f;
     [SerializeField] private LayerMask brewingPotMask;
     [SerializeField] private IngredientList ingredientList;
+    [SerializeField] private EventReference brewSoundEffectReference;
     private bool canBrew;
     private PlayerInventoryUI playerInventoryUI;
     private BuildingConstructor buildingConstructor;
@@ -73,6 +75,7 @@ public class PlayerBrewer : MonoBehaviour
                 if (recipe != null)
                 {
                     buildingConstructor.CurrentBuilding = brewingPot.Brew(ref ingredientList.value, recipe);
+                    RuntimeManager.PlayOneShot(brewSoundEffectReference);
                     success = true;
                 }
             }

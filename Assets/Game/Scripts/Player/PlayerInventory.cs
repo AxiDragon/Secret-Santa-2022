@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using FMODUnity;
 using UnityEngine;
 
 public class PlayerInventory : MonoBehaviour
@@ -10,6 +11,7 @@ public class PlayerInventory : MonoBehaviour
     public bool canPickup;
     private PlayerInventoryUI playerInventoryUI;
     private BuildingConstructor buildingConstructor;
+    [SerializeField] private EventReference pickupSoundEffectReference;
 
     public bool CanPickup
     {
@@ -93,6 +95,7 @@ public class PlayerInventory : MonoBehaviour
             if (success)
             {
                 ingredients.value.Add(ingredientPickup);
+                RuntimeManager.PlayOneShot(pickupSoundEffectReference);
                 break;
             }
         }

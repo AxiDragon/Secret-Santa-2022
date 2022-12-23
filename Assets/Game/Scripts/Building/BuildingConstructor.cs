@@ -1,16 +1,18 @@
-using System;
 using System.Linq;
 using DG.Tweening;
-using Unity.VisualScripting;
+using FMODUnity;
 using UnityEngine;
 using UnityEngine.Events;
-using UnityEngine.InputSystem;
+using UnityEngine.VFX;
 
 public class BuildingConstructor : MonoBehaviour
 {
     [SerializeField] private Material previewMaterial;
     [SerializeField] private GridPointListVariable gridPointList;
-    private Building currentBuilding = null;
+    [SerializeField] private EventReference buildSoundEffectReference;
+    private Building currentBuilding;
+    private BuildingCollectionTracker buildingCollectionTracker;
+    private VisualEffect buildEffect;
 
     public Building CurrentBuilding
     {
@@ -91,6 +93,9 @@ public class BuildingConstructor : MonoBehaviour
     private void Awake()
     {
         playerInventoryUI = FindObjectOfType<PlayerInventoryUI>();
+        buildEffect = GetComponentInChildren<VisualEffect>();
+        buildingCollectionTracker = FindObjectOfType<BuildingCollectionTracker>();
+        buildEffect.transform.parent = null;
     }
 
     private void Update()
@@ -118,6 +123,14 @@ public class BuildingConstructor : MonoBehaviour
 
         buildingInstance.AddPointsToGrid();
 
+        buildEffect.transform.position = ClosestGridPoint.transform.position;
+        buildEffect.Play();
+        
+        RuntimeManager.PlayOneShot(buildSoundEffectReference);
+
+        if (buildingCollectionTracker != null)
+            buildingCollectionTracker.AttemptAddBuildingToCollection(CurrentBuilding);
+        
         ResetBuildMode();
 
         SpawnObjectEasing(buildingInstance.gameObject);
