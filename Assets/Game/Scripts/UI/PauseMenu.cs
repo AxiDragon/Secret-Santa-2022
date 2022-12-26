@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using DG.Tweening;
@@ -25,15 +26,16 @@ public class PauseMenu : MonoBehaviour
         baseSensitivity = rpgCamera.RotationXSensitivity;
         globalVolumeBus = RuntimeManager.GetBus("bus:/");
     }
-
+    
     public void DisplayPauseMenu()
     {
         showingPauseMenu = !showingPauseMenu;
         
         float targetPosition = showingPauseMenu ? 250f : 600f;
         Time.timeScale = showingPauseMenu ? 0f : 1f;
-        Cursor.lockState = showingPauseMenu ? CursorLockMode.None : CursorLockMode.Locked;
         rpgCamera.enabled = !showingPauseMenu;
+        Cursor.lockState = showingPauseMenu ? CursorLockMode.None : CursorLockMode.Locked;
+        Cursor.visible = showingPauseMenu;
         RuntimeManager.PlayOneShot(showingPauseMenu ? menuOpenSFX : menuCloseSFX);
         
         pauseMenuRectTransform.DOAnchorPosY(targetPosition, 1f).SetEase(Ease.InOutSine).SetUpdate(true);
